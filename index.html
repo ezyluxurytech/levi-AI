@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Levi AI — Learning & Document Assistant</title>
+    <meta name="description" content="AI-powered learning and document-understanding assistant for university students with document-grounded Q&A, study summaries, quizzes, and Nigerian language translations." />
+    <meta property="og:title" content="Levi AI — Learning & Document Assistant" />
+    <meta property="og:description" content="AI-powered learning and document-understanding assistant for university students with document-grounded Q&A, study summaries, quizzes, and Nigerian language translations." />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300..800;1,300..800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <script>
+      // Suppress unhandled errors and rejections originating from third-party browser extensions (e.g. MetaMask, web3 wallets)
+      window.addEventListener('unhandledrejection', function(event) {
+        var reason = event.reason;
+        var message = (reason && (reason.message || reason.stack || String(reason))) || '';
+        if (
+          message.indexOf('MetaMask') !== -1 ||
+          message.indexOf('nkbihfbeogaeaoehlefnkodbefgpgknn') !== -1 ||
+          message.indexOf('chrome-extension://') !== -1 ||
+          message.indexOf('moz-extension://') !== -1 ||
+          message.indexOf('safari-extension://') !== -1
+        ) {
+          event.preventDefault();
+          event.stopImmediatePropagation();
+        }
+      }, true);
+
+      window.addEventListener('error', function(event) {
+        var filename = event.filename || '';
+        var message = event.message || '';
+        if (
+          filename.indexOf('chrome-extension://') !== -1 ||
+          filename.indexOf('moz-extension://') !== -1 ||
+          filename.indexOf('safari-extension://') !== -1 ||
+          filename.indexOf('nkbihfbeogaeaoehlefnkodbefgpgknn') !== -1 ||
+          message.indexOf('MetaMask') !== -1
+        ) {
+          event.preventDefault();
+          event.stopImmediatePropagation();
+        }
+      }, true);
+    </script>
+  </head>
+  <body class="bg-slate-50 text-slate-900 antialiased font-sans selection:bg-indigo-100 selection:text-indigo-900">
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
+

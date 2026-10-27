@@ -1,0 +1,6 @@
+{
+  "name": "Levi AI — Learning & Document Assistant",
+  "description": "AI-powered learning and document-understanding assistant for university students with document-grounded Q&A, study summaries, quizzes, and Nigerian language translations.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
