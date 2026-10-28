@@ -105,18 +105,24 @@ export const LanguageMode: React.FC<LanguageModeProps> = ({
     <div className="space-y-6 max-w-5xl mx-auto py-2">
       {/* Header Banner */}
       <div className="bg-white p-5 rounded-xl border border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2">
-            <h2 className="text-base font-bold text-slate-900">
-              Nigerian Languages Translation
-            </h2>
-            <span className="text-xs font-mono text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-              OPEN//BUILD 2026
-            </span>
+        <div className="flex items-center gap-3.5">
+          <div className="w-11 h-11 rounded-xl bg-white border border-slate-200/80 p-1 shadow-xs shrink-0 flex items-center justify-center">
+            <img
+              src="/assets/aistudio/Levi_AI_Learning_Logo_a2b86b0f.png"
+              alt="Levi AI Translation"
+              className="w-full h-full object-contain"
+            />
           </div>
-          <p className="text-xs text-slate-500 mt-0.5">
-            Translate academic summaries, explanations, and university coursework between English, Èdè Yorùbá, Ásụ̀sụ́ Ìgbò, and Harshen Hausa.
-          </p>
+          <div>
+            <div className="flex items-center gap-2">
+              <h2 className="text-base font-bold text-slate-900">
+                Nigerian Languages Translation
+              </h2>
+            </div>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Translate academic summaries, explanations, and university coursework between English, Èdè Yorùbá, Ásụ̀sụ́ Ìgbò, and Harshen Hausa.
+            </p>
+          </div>
         </div>
 
         <div className="flex items-center gap-1.5 text-xs text-slate-500 font-medium">
@@ -313,7 +319,6 @@ export const LanguageMode: React.FC<LanguageModeProps> = ({
 
           <div className="pt-3 border-t border-slate-100 text-[10px] text-slate-400 flex items-center justify-between">
             <span>Preserves tone marks & orthography</span>
-            <span className="font-mono">OPEN//BUILD 2026</span>
           </div>
         </div>
       </div>

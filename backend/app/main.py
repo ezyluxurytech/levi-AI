@@ -13,7 +13,7 @@ from app.services.ai_provider import GeminiAIProvider, OfflineAIProvider, BaseAI
 
 app = FastAPI(
     title="Levi AI — Backend API",
-    description="Backend API for Levi AI (OPEN//BUILD 2026 by OSCA Ile-Ife)",
+    description="Backend API for Levi AI",
     version="1.0.0"
 )
 

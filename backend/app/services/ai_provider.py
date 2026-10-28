@@ -122,7 +122,7 @@ class OfflineAIProvider(BaseAIProvider):
         return False
 
     def ask_document_question(self, question: str, passages: List[Dict[str, Any]], document_title: str):
-        raise RuntimeError("AI backend is not configured. OPEN//BUILD guidelines require that no fabricated answers are returned.")
+        raise RuntimeError("AI backend is not configured. Configured guidelines require that no fabricated answers are returned.")
 
     def summarize(self, text: str, format_type: str):
         raise RuntimeError("AI provider is not configured. Summarization unavailable.")

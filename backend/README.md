@@ -1,6 +1,6 @@
 # Levi AI — Python FastAPI Backend
 
-Open Source AI-powered learning and document-understanding assistant developed for **OPEN//BUILD 2026** by Open Source Community Africa (OSCA), Ile-Ife.
+Open Source AI-powered learning and document-understanding assistant.
 
 ## Setup & Running
 

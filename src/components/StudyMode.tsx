@@ -192,18 +192,27 @@ export const StudyMode: React.FC<StudyModeProps> = ({
     <div className="space-y-6 max-w-6xl mx-auto py-2">
       {/* Header Banner */}
       <div className="bg-white p-5 rounded-xl border border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2">
-            <h2 className="text-base font-bold text-slate-900">
-              Study & Practice Engine
-            </h2>
-            <span className="text-xs font-mono text-slate-500">
-              [Summarizer · Explainer · Interactive Quiz]
-            </span>
+        <div className="flex items-center gap-3.5">
+          <div className="w-11 h-11 rounded-xl bg-white border border-slate-200/80 p-1 shadow-xs shrink-0 flex items-center justify-center">
+            <img
+              src="/assets/aistudio/Levi_AI_Learning_Logo_a2b86b0f.png"
+              alt="Levi AI Study Engine"
+              className="w-full h-full object-contain"
+            />
           </div>
-          <p className="text-xs text-slate-500 mt-0.5">
-            Transform dense university lecture notes into structured executive summaries, conceptual analogies, and self-testing quizzes.
-          </p>
+          <div>
+            <div className="flex items-center gap-2">
+              <h2 className="text-base font-bold text-slate-900">
+                Study & Practice Engine
+              </h2>
+              <span className="text-xs font-mono text-slate-500">
+                [Summarizer · Explainer · Interactive Quiz]
+              </span>
+            </div>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Transform dense university lecture notes into structured executive summaries, conceptual analogies, and self-testing quizzes.
+            </p>
+          </div>
         </div>
 
         {/* Tab Switcher */}
@@ -251,7 +260,7 @@ export const StudyMode: React.FC<StudyModeProps> = ({
                 AI Provider Not Configured
               </p>
               <p className="text-xs text-amber-700 mt-0.5">
-                In strict compliance with OPEN//BUILD 2026 guidelines, Levi AI does not return random or fabricated AI answers when an AI provider is not connected.
+                Levi AI does not return random or fabricated AI answers when an AI provider is not connected.
               </p>
             </div>
           </div>

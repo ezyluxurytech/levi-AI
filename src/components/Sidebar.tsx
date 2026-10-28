@@ -78,27 +78,23 @@ export const Sidebar: React.FC<SidebarProps> = ({
         }`}
       >
         {/* Brand / Logo Zone */}
-        <div className="p-5 border-b border-slate-800/80 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg bg-indigo-600 flex items-center justify-center text-white font-bold tracking-wider shadow-sm shadow-indigo-500/20">
-              <span className="text-base font-extrabold tracking-tight">LV</span>
+        <div className="p-4 border-b border-slate-800/80 flex items-center justify-between">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-10 h-10 rounded-xl bg-white p-1 shadow-md shadow-indigo-950/50 shrink-0 flex items-center justify-center">
+              <img
+                src="/assets/aistudio/Levi_AI_Learning_Logo_a2b86b0f.png"
+                alt="Levi AI Logo"
+                className="w-full h-full object-contain"
+              />
             </div>
-            <div>
-              <div className="text-base font-bold text-white tracking-tight flex items-center gap-1.5">
+            <div className="min-w-0">
+              <div className="text-base font-bold text-white tracking-tight flex items-center gap-1.5 truncate">
                 Levi AI
               </div>
-              <p className="text-[11px] text-slate-400 font-medium">
-                Learning & Document Engine
+              <p className="text-[10px] text-indigo-300/80 font-medium tracking-wide truncate">
+                Learn • Understand • Grow
               </p>
             </div>
-          </div>
-        </div>
-
-        {/* Challenge & Project Context Notice */}
-        <div className="px-5 py-3 border-b border-slate-800/50 bg-slate-900/60">
-          <div className="flex items-center justify-between text-[11px] text-slate-400">
-            <span className="font-medium text-slate-300">OPEN//BUILD 2026</span>
-            <span className="text-indigo-400 font-mono text-[10px]">OSCA Ile-Ife</span>
           </div>
         </div>
 

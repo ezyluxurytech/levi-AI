@@ -58,15 +58,19 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
         {/* Header */}
         <div className="p-5 border-b border-slate-200 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-lg bg-indigo-50 text-indigo-600">
-              <Cpu className="w-5 h-5" />
+            <div className="w-10 h-10 rounded-xl bg-white border border-slate-200/80 p-1 shadow-2xs flex items-center justify-center shrink-0">
+              <img
+                src="/assets/aistudio/Levi_AI_Learning_Logo_a2b86b0f.png"
+                alt="Levi AI"
+                className="w-full h-full object-contain"
+              />
             </div>
             <div>
               <h3 className="text-base font-bold text-slate-900">
                 AI Architecture & Provider Configuration
               </h3>
               <p className="text-xs text-slate-500">
-                OPEN//BUILD 2026 Replaceable AI Interface Specification
+                Replaceable AI Provider Specification
               </p>
             </div>
           </div>
@@ -104,14 +108,14 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             </span>
           </div>
 
-          {/* OPEN//BUILD 2026 Compliance Note */}
+          {/* Architectural Design Note */}
           <div className="p-3.5 rounded-lg bg-indigo-50/70 border border-indigo-100 text-indigo-950 text-xs space-y-1.5">
             <p className="font-bold flex items-center gap-1.5 text-indigo-900">
               <ShieldCheck className="w-4 h-4 text-indigo-600" />
-              OPEN//BUILD 2026 Architectural Compliance:
+              Decoupled Architecture:
             </p>
             <p className="text-[11px] leading-relaxed text-indigo-900/90">
-              Levi AI adopts a decoupled <code className="bg-indigo-100 px-1 py-0.5 rounded font-mono text-[10px]">BaseAIProvider</code> interface. No single vendor is hardcoded into the business logic. Document-grounded passage retrieval is independent of inference, allowing students and judges to hot-swap between Gemini 3.8 Flash, local open-weight engines (Ollama / vLLM), or mock mode without modifying the application code.
+              Levi AI adopts a decoupled <code className="bg-indigo-100 px-1 py-0.5 rounded font-mono text-[10px]">BaseAIProvider</code> interface. No single vendor is hardcoded into the business logic. Document-grounded passage retrieval is independent of inference, allowing users to hot-swap between Gemini 3.8 Flash, local open-weight engines (Ollama / vLLM), or mock mode without modifying the application code.
             </p>
           </div>
 
@@ -183,6 +187,12 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             {/* Custom Endpoint Inputs */}
             {selectedType === "custom" && (
               <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 space-y-3 mt-3">
+                <div className="p-2.5 rounded-lg bg-amber-50 border border-amber-200 text-amber-900 text-[11px] leading-relaxed flex items-start gap-2">
+                  <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                  <div>
+                    <span className="font-semibold">Local Endpoint Advisory:</span> Addresses like <code className="font-mono bg-amber-100 px-1 py-0.5 rounded">http://localhost:11434</code> require an Ollama instance running locally. In this cloud preview, connect to an external accessible URL or keep <span className="font-semibold">Gemini 3.8 Flash</span> selected for instant server-side AI.
+                  </div>
+                </div>
                 <div>
                   <label className="block text-[11px] font-semibold text-slate-700 mb-1">
                     API Base URL (OpenAI-compatible)
@@ -218,7 +228,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               Python FastAPI Backend Codebase Included
             </div>
             <p className="text-[11px] text-slate-600 leading-relaxed">
-              The project root includes a complete Python FastAPI backend under <code className="font-mono bg-white px-1 py-0.5 rounded text-[10px]">/backend</code> with <code className="font-mono bg-white px-1 py-0.5 rounded text-[10px]">PyMuPDF</code> extraction, Pydantic schemas, and FastAPI routes for direct submission to the OPEN//BUILD 2026 repository.
+              The project root includes a complete Python FastAPI backend under <code className="font-mono bg-white px-1 py-0.5 rounded text-[10px]">/backend</code> with <code className="font-mono bg-white px-1 py-0.5 rounded text-[10px]">PyMuPDF</code> extraction, Pydantic schemas, and FastAPI routes for direct submission and deployment.
             </p>
           </div>
 

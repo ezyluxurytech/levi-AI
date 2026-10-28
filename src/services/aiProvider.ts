@@ -61,10 +61,17 @@ export interface AIProvider {
  */
 export class GeminiAIProvider implements AIProvider {
   name = "Gemini AI Provider";
-  model = "gemini-3.8-flash";
+  model = "gemini-3.1-flash-lite";
   isConfigured: boolean;
   private ai: GoogleGenAI | null = null;
-  private modelCandidates = ["gemini-3.8-flash"];
+  private modelCandidates = [
+    "gemini-3.1-flash-lite",
+    "gemini-3.5-flash",
+    "gemini-flash-lite-latest",
+    "gemini-3.5-flash-lite",
+    "gemini-3-flash-preview",
+    "gemini-3.8-flash",
+  ];
 
   constructor(apiKey?: string) {
     const key = apiKey || process.env.GEMINI_API_KEY;
@@ -91,7 +98,7 @@ export class GeminiAIProvider implements AIProvider {
     for (const modelName of this.modelCandidates) {
       try {
         const timeoutPromise = new Promise<never>((_, reject) => {
-          setTimeout(() => reject(new Error("Request timeout (2.5s)")), 2500);
+          setTimeout(() => reject(new Error("Request timeout (8s)")), 8000);
         });
 
         const generatePromise = this.ai.models.generateContent({
@@ -106,7 +113,6 @@ export class GeminiAIProvider implements AIProvider {
         }
       } catch (err: any) {
         lastError = err;
-        console.warn(`[GeminiAIProvider] ${modelName} returned error: ${err.message?.slice(0, 80)}. Trying fallback...`);
       }
     }
 
@@ -170,7 +176,7 @@ STRICT RULES FOR DOCUMENT GROUNDING:
         hasGrounding: !hasInsufficientInfo,
       };
     } catch (apiErr: any) {
-      console.warn("Gemini call failed during Q&A, formulating passage-grounded excerpt:", apiErr.message);
+      console.info("Gemini call fell back during Q&A, formulating passage-grounded excerpt:", apiErr.message);
 
       // Deterministic fallback using the retrieved passages
       const answer = `Based on the retrieved document passages:\n\n` +
@@ -220,7 +226,7 @@ Return your response in standard JSON format:
         readingTimeMinutes: readingTime,
       };
     } catch (err: any) {
-      console.warn("Gemini call for summary failed, using extractive summary fallback:", err.message);
+      console.info("Gemini call for summary fell back, using extractive summary fallback:", err.message);
       // Clean extractive summary fallback
       const sentences = text.match(/[^.!?]+[.!?]+(\s+|$)/g) || [text];
       const overview = sentences.slice(0, 3).join(" ").trim();
@@ -263,7 +269,7 @@ Return JSON with the following exact keys:
         examTakeaway: parsed.examTakeaway || "Ensure you understand the core definition and practical use cases.",
       };
     } catch (err: any) {
-      console.warn("Gemini call for explain failed, using structured breakdown:", err.message);
+      console.info("Gemini call for explain fell back, using structured breakdown:", err.message);
       return {
         concept,
         simpleExplanation: `In academic study, "${concept}" is a fundamental theoretical principle${context ? ` within ${context}` : ""}. It establishes the operational boundaries, input-output behaviors, and invariant properties necessary for analyzing system performance.`,
@@ -313,7 +319,7 @@ Return a JSON array of questions:
         }));
       }
     } catch (err: any) {
-      console.warn("Gemini call for quiz failed, generating structured questions from material:", err.message);
+      console.info("Gemini call for quiz fell back, generating structured questions from material:", err.message);
     }
 
     // Extractive question generator from content sentences
@@ -393,7 +399,7 @@ Return JSON format:
         notes: parsed.notes || undefined,
       };
     } catch (err: any) {
-      console.warn("Gemini call for translation failed, using linguistic translation table:", err.message);
+      console.info("Gemini call for translation fell back, using linguistic translation table:", err.message);
 
       // Contextual dictionary for university academic greetings and common terms
       const dictionary: Record<string, Record<string, string>> = {
@@ -498,28 +504,52 @@ export class CustomEndpointProvider implements AIProvider {
   }
 
   private async callChatCompletion(systemPrompt: string, userPrompt: string): Promise<string> {
-    const res = await fetch(`${this.endpoint}/chat/completions`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        ...(this.apiKey ? { Authorization: `Bearer ${this.apiKey}` } : {}),
-      },
-      body: JSON.stringify({
-        model: this.model,
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt },
-        ],
-        temperature: 0.3,
-      }),
-    });
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
 
-    if (!res.ok) {
-      throw new Error(`Custom endpoint returned ${res.status}: ${res.statusText}`);
+    try {
+      const res = await fetch(`${this.endpoint}/chat/completions`, {
+        method: "POST",
+        signal: controller.signal,
+        headers: {
+          "Content-Type": "application/json",
+          ...(this.apiKey ? { Authorization: `Bearer ${this.apiKey}` } : {}),
+        },
+        body: JSON.stringify({
+          model: this.model,
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: userPrompt },
+          ],
+          temperature: 0.3,
+        }),
+      });
+
+      if (!res.ok) {
+        throw new Error(`Custom endpoint returned ${res.status}: ${res.statusText}`);
+      }
+
+      const data = await res.json();
+      return data.choices?.[0]?.message?.content || "";
+    } catch (err: any) {
+      if (err.name === "AbortError") {
+        throw new Error(`Request to custom endpoint at ${this.endpoint} timed out after 15s.`);
+      }
+
+      const isConnRefused =
+        err.code === "ECONNREFUSED" ||
+        err.cause?.code === "ECONNREFUSED" ||
+        (typeof err.message === "string" && err.message.includes("fetch failed"));
+
+      if (isConnRefused) {
+        throw new Error(
+          `Unable to connect to custom open-weight endpoint at ${this.endpoint} (Connection Refused). In a cloud-hosted environment, local localhost daemons like Ollama are not reachable; please switch to the Gemini AI Provider in Settings or enter an accessible public endpoint.`
+        );
+      }
+      throw err;
+    } finally {
+      clearTimeout(timeoutId);
     }
-
-    const data = await res.json();
-    return data.choices?.[0]?.message?.content || "";
   }
 
   async askDocumentQuestion(
@@ -598,7 +628,7 @@ export class OfflineAIProvider implements AIProvider {
 
   async askDocumentQuestion(): Promise<GroundedAnswer> {
     throw new Error(
-      "AI provider has not yet been connected to the backend. In accordance with the OPEN//BUILD 2026 guidelines, Levi AI does not fabricate answers when an AI model is not configured."
+      "AI provider has not yet been connected to the backend. Levi AI does not fabricate answers when an AI model is not configured."
     );
   }
 

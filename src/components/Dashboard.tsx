@@ -74,14 +74,14 @@ export const Dashboard: React.FC<DashboardProps> = ({
   return (
     <div className="space-y-8 max-w-6xl mx-auto py-2">
       {/* Welcome Banner */}
-      <div className="relative rounded-2xl bg-white border border-slate-200/80 p-6 md:p-8 shadow-xs overflow-hidden">
-        <div className="relative z-10 max-w-3xl">
-          <div className="flex items-center gap-2 text-xs font-medium text-indigo-600 mb-2">
-            <span>OPEN//BUILD 2026</span>
-            <span aria-hidden="true">·</span>
-            <span>OSCA Ile-Ife Challenge</span>
-            <span aria-hidden="true">·</span>
-            <span>Academic AI Workspace</span>
+      <div className="relative rounded-2xl bg-white border border-slate-200/80 p-6 md:p-8 shadow-xs overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-8">
+        <div className="relative z-10 max-w-2xl">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 border border-indigo-100 text-[11px] font-semibold text-indigo-700 mb-3 tracking-wide">
+            <span>Learn</span>
+            <span aria-hidden="true" className="text-indigo-400">·</span>
+            <span>Understand</span>
+            <span aria-hidden="true" className="text-indigo-400">·</span>
+            <span>Grow</span>
           </div>
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-slate-900 text-balance">
             Intelligent Document & Learning Assistant for University Students
@@ -115,13 +115,18 @@ export const Dashboard: React.FC<DashboardProps> = ({
           </div>
         </div>
 
-        {/* Decorative subtle background illustration lines */}
-        <div className="absolute right-0 bottom-0 top-0 w-1/3 opacity-[0.03] pointer-events-none hidden md:block">
-          <svg className="w-full h-full" viewBox="0 0 200 200" fill="none">
-            <circle cx="100" cy="100" r="80" stroke="currentColor" strokeWidth="2" />
-            <circle cx="100" cy="100" r="50" stroke="currentColor" strokeWidth="2" />
-            <circle cx="100" cy="100" r="20" stroke="currentColor" strokeWidth="2" />
-          </svg>
+        {/* Hero Logo Card */}
+        <div className="hidden lg:flex flex-col items-center justify-center shrink-0 pr-2">
+          <div className="w-36 h-36 rounded-2xl bg-white border border-slate-200/80 p-3 shadow-sm hover:shadow-md transition-shadow flex items-center justify-center">
+            <img
+              src="/assets/aistudio/Levi_AI_Learning_Logo_a2b86b0f.png"
+              alt="Levi AI — Learn, Understand, Grow"
+              className="w-full h-full object-contain filter drop-shadow-xs"
+            />
+          </div>
+          <span className="text-[11px] font-semibold text-slate-500 mt-2 tracking-wide">
+            Levi AI Companion
+          </span>
         </div>
       </div>
 
@@ -411,7 +416,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
               </span>
             </div>
             <p className="text-xs text-slate-400 mt-1 max-w-2xl leading-relaxed">
-              Decoupled interface compliant with OPEN//BUILD 2026. The backend does not hardcode a single provider and cleanly separates document grounding from inference.
+              Decoupled interface architecture. The backend does not hardcode a single provider and cleanly separates document grounding from inference.
             </p>
           </div>
         </div>

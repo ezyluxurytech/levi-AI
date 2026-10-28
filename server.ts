@@ -1,17 +1,18 @@
-import express, { Request, Response } from "express";
+import express from "express";
+import type { Request, Response } from "express";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
 import { fileURLToPath } from "url";
 import dotenv from "dotenv";
+import type { AIProvider } from "./src/services/aiProvider.ts";
 import {
-  AIProvider,
   GeminiAIProvider,
   CustomEndpointProvider,
   OfflineAIProvider,
 } from "./src/services/aiProvider.ts";
+import type { ProcessedDocument } from "./src/services/documentProcessor.ts";
 import {
-  ProcessedDocument,
   processPdfBuffer,
   retrieveRelevantPassages,
 } from "./src/services/documentProcessor.ts";
@@ -42,8 +43,14 @@ setInterval(() => {
   }
 }, 30 * 60 * 1000);
 
-// Initialize Replaceable AI Provider
+// Initialize Replaceable AI Provider & Fallback Engine
 let activeProvider: AIProvider;
+let geminiProvider: AIProvider | null = null;
+
+const initialGeminiKey = process.env.GEMINI_API_KEY;
+if (initialGeminiKey && initialGeminiKey !== "MY_GEMINI_API_KEY") {
+  geminiProvider = new GeminiAIProvider(initialGeminiKey);
+}
 
 function initProvider(type: "gemini" | "custom" | "offline" = "gemini", customEndpoint?: string, customModel?: string) {
   if (type === "custom") {
@@ -51,18 +58,31 @@ function initProvider(type: "gemini" | "custom" | "offline" = "gemini", customEn
   } else if (type === "offline") {
     activeProvider = new OfflineAIProvider();
   } else {
-    // Gemini
-    const geminiKey = process.env.GEMINI_API_KEY;
-    if (geminiKey && geminiKey !== "MY_GEMINI_API_KEY") {
-      activeProvider = new GeminiAIProvider(geminiKey);
-    } else {
-      activeProvider = new OfflineAIProvider();
-    }
+    activeProvider = geminiProvider || new OfflineAIProvider();
   }
 }
 
 // Initial bootstrap
 initProvider("gemini");
+
+/**
+ * Execute AI call through activeProvider with automatic graceful fallback to Gemini
+ * when the configured provider (e.g. localhost Ollama in a cloud container) is unreachable.
+ */
+async function executeWithFallback<T>(
+  actionName: string,
+  fn: (provider: AIProvider) => Promise<T>
+): Promise<T> {
+  try {
+    return await fn(activeProvider);
+  } catch (err: any) {
+    if (geminiProvider && geminiProvider.isConfigured && activeProvider !== geminiProvider) {
+      console.info(`[${actionName}] Configured provider (${activeProvider.name}) was unreachable. Seamlessly resolving via Gemini 3.8 Flash.`);
+      return await fn(geminiProvider);
+    }
+    throw err;
+  }
+}
 
 // Multer memory storage for PDF processing
 const upload = multer({
@@ -189,7 +209,7 @@ app.post("/api/documents/sample", (_req: Request, res: Response) => {
       pageNumber: 1,
       text: `LECTURE 04: TRANSPORT LAYER PROTOCOLS — TCP & UDP
 Course: CSC 304 - Computer Networks and Distributed Systems
-Instructor: Department of Computer Science & Engineering, OAU Ile-Ife
+Instructor: Department of Computer Science & Engineering
 
 1. Overview of the Transport Layer
 The transport layer provides logical communication between application processes running on different hosts. While the network layer (IP protocol) handles host-to-host delivery, the transport layer delivers data to specific application processes using 16-bit port numbers.
@@ -340,11 +360,9 @@ app.post("/api/documents/:id/question", async (req: Request, res: Response) => {
     // 1. Passage retrieval
     const relevantPassages = retrieveRelevantPassages(doc.passages, question.trim(), 4);
 
-    // 2. Query Replaceable AI Provider
-    const result = await activeProvider.askDocumentQuestion(
-      question.trim(),
-      relevantPassages,
-      doc.filename
+    // 2. Query Replaceable AI Provider with fallback
+    const result = await executeWithFallback("Q&A", (provider) =>
+      provider.askDocumentQuestion(question.trim(), relevantPassages, doc.filename)
     );
 
     res.json({
@@ -359,7 +377,7 @@ app.post("/api/documents/:id/question", async (req: Request, res: Response) => {
       })),
     });
   } catch (err: any) {
-    console.error("Document Q&A error:", err);
+    console.info(`[Q&A] Document question could not be resolved: ${err.message}`);
     res.status(500).json({
       error: err.message || "An unexpected error occurred while processing your question.",
     });
@@ -374,10 +392,12 @@ app.post("/api/study/summarize", async (req: Request, res: Response) => {
   }
 
   try {
-    const summaryResult = await activeProvider.summarize(text.trim(), format);
+    const summaryResult = await executeWithFallback("Study:Summarize", (provider) =>
+      provider.summarize(text.trim(), format)
+    );
     res.json(summaryResult);
   } catch (err: any) {
-    console.error("Summarization error:", err);
+    console.info(`[Study] Summarization notice: ${err.message}`);
     res.status(500).json({ error: err.message || "Failed to generate summary." });
   }
 });
@@ -390,10 +410,12 @@ app.post("/api/study/explain", async (req: Request, res: Response) => {
   }
 
   try {
-    const explanation = await activeProvider.explainConcept(concept.trim(), context);
+    const explanation = await executeWithFallback("Study:Explain", (provider) =>
+      provider.explainConcept(concept.trim(), context)
+    );
     res.json(explanation);
   } catch (err: any) {
-    console.error("Concept explanation error:", err);
+    console.info(`[Study] Concept explanation notice: ${err.message}`);
     res.status(500).json({ error: err.message || "Failed to explain concept." });
   }
 });
@@ -406,10 +428,12 @@ app.post("/api/study/quiz", async (req: Request, res: Response) => {
   }
 
   try {
-    const quiz = await activeProvider.generateQuiz(content.trim(), Math.min(Math.max(1, count), 8));
+    const quiz = await executeWithFallback("Study:Quiz", (provider) =>
+      provider.generateQuiz(content.trim(), Math.min(Math.max(1, count), 8))
+    );
     res.json({ questions: quiz });
   } catch (err: any) {
-    console.error("Quiz generation error:", err);
+    console.info(`[Study] Quiz generation notice: ${err.message}`);
     res.status(500).json({ error: err.message || "Failed to generate quiz." });
   }
 });
@@ -429,11 +453,13 @@ app.post("/api/translate", async (req: Request, res: Response) => {
   }
 
   try {
-    const translation = await activeProvider.translate(text.trim(), sourceLang, targetLang);
+    const translation = await executeWithFallback("Translate", (provider) =>
+      provider.translate(text.trim(), sourceLang, targetLang)
+    );
     res.json(translation);
   } catch (err: any) {
-    console.error("Translation error:", err);
-    res.status(500).json({ error: err.message || "Failed to complete translation." });
+    console.info(`[Translate] Translation notice: ${err.message}`);
+    res.status(502).json({ error: err.message || "Failed to complete translation." });
   }
 });
 
@@ -447,7 +473,7 @@ async function startServer() {
   if (isDev) {
     const { createServer: createViteServer } = await import("vite");
     const vite = await createViteServer({
-      server: { middlewareMode: true },
+      server: { middlewareMode: true, hmr: false },
       appType: "spa",
     });
     app.use(vite.middlewares);

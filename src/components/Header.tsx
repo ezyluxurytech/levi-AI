@@ -41,11 +41,16 @@ export const Header: React.FC<HeaderProps> = ({
         >
           <Menu className="w-5 h-5" />
         </button>
-        <div className="flex items-center gap-2 text-sm">
-          <span className="font-semibold text-slate-900 whitespace-nowrap">
+        <div className="flex items-center gap-2.5 text-sm">
+          <img
+            src="/assets/aistudio/Levi_AI_Learning_Logo_a2b86b0f.png"
+            alt="Levi AI"
+            className="w-7 h-7 object-contain rounded-md shrink-0 shadow-2xs border border-slate-200/60"
+          />
+          <span className="font-bold text-slate-900 whitespace-nowrap">
             Levi AI
           </span>
-          <span className="text-slate-400 font-normal">/</span>
+          <span className="text-slate-300 font-normal">/</span>
           <span className="text-slate-600 font-medium whitespace-nowrap">
             {getModeTitle()}
           </span>

@@ -1,6 +1,125 @@
 <!doctype html>
 <html lang="en">
   <head>
+    <script>
+      // Clean runtime error handling: suppress 3rd-party extension noise (MetaMask) and expected Vite dev websocket notices
+      (function() {
+        function extractText(arg) {
+          if (!arg) return '';
+          if (typeof arg === 'string') return arg;
+          if (typeof arg === 'object') {
+            try {
+              var str = (arg.message || '') + ' ' + (arg.stack || '') + ' ' + (arg.name || '');
+              if (arg.cause) str += ' ' + extractText(arg.cause);
+              return str;
+            } catch (e) {
+              return String(arg);
+            }
+          }
+          return String(arg);
+        }
+
+        function isIgnored(str) {
+          if (!str || typeof str !== 'string') return false;
+          var s = str.toLowerCase();
+          return (
+            s.indexOf('metamask') !== -1 ||
+            s.indexOf('inpage.js') !== -1 ||
+            s.indexOf('restoring session') !== -1 ||
+            s.indexOf('nkbihfbeogaeaoehlefnkodbefgpgknn') !== -1 ||
+            s.indexOf('chrome-extension:') !== -1 ||
+            s.indexOf('moz-extension:') !== -1 ||
+            s.indexOf('safari-extension:') !== -1 ||
+            s.indexOf('websocket closed without opened') !== -1 ||
+            s.indexOf('failed to connect to websocket') !== -1 ||
+            s.indexOf('websocket') !== -1 ||
+            s.indexOf('illegal invocation') !== -1 ||
+            s.indexOf('[vite]') !== -1
+          );
+        }
+
+        function checkArgs(args) {
+          var combined = '';
+          for (var i = 0; i < args.length; i++) {
+            combined += extractText(args[i]) + ' ';
+          }
+          return isIgnored(combined);
+        }
+
+        // Filter console methods
+        var origWarn = console.warn;
+        console.warn = function() {
+          if (checkArgs(arguments)) return;
+          origWarn.apply(console, arguments);
+        };
+
+        var origError = console.error;
+        console.error = function() {
+          if (checkArgs(arguments)) return;
+          origError.apply(console, arguments);
+        };
+
+        var origDebug = console.debug;
+        console.debug = function() {
+          if (checkArgs(arguments)) return;
+          origDebug.apply(console, arguments);
+        };
+
+        var origInfo = console.info;
+        console.info = function() {
+          if (checkArgs(arguments)) return;
+          origInfo.apply(console, arguments);
+        };
+
+        // Filter messages relayed by parent iframe loggers to AI Studio console
+        try {
+          if (window.parent && window.parent !== window) {
+            var origParentPost = window.parent.postMessage;
+            window.parent.postMessage = function(msg, targetOrigin, transfer) {
+              var serialized = '';
+              try {
+                serialized = typeof msg === 'string' ? msg : JSON.stringify(msg);
+              } catch (e) {
+                serialized = String(msg);
+              }
+              if (isIgnored(serialized)) return;
+              return origParentPost.apply(window.parent, arguments);
+            };
+          }
+          if (window.top && window.top !== window && window.top !== window.parent) {
+            var origTopPost = window.top.postMessage;
+            window.top.postMessage = function(msg, targetOrigin, transfer) {
+              var serialized = '';
+              try {
+                serialized = typeof msg === 'string' ? msg : JSON.stringify(msg);
+              } catch (e) {
+                serialized = String(msg);
+              }
+              if (isIgnored(serialized)) return;
+              return origTopPost.apply(window.top, arguments);
+            };
+          }
+        } catch (e) {}
+
+        // Suppress unhandled promise rejections
+        window.addEventListener('unhandledrejection', function(event) {
+          var text = extractText(event.reason);
+          if (isIgnored(text)) {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+          }
+        }, true);
+
+        // Suppress window error events
+        window.addEventListener('error', function(event) {
+          var text = (event.message || '') + ' ' + (event.filename || '') + ' ' + extractText(event.error);
+          if (isIgnored(text)) {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+          }
+        }, true);
+      })();
+    </script>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Levi AI — Learning & Document Assistant</title>
@@ -8,42 +127,11 @@
     <meta property="og:title" content="Levi AI — Learning & Document Assistant" />
     <meta property="og:description" content="AI-powered learning and document-understanding assistant for university students with document-grounded Q&A, study summaries, quizzes, and Nigerian language translations." />
     <meta property="og:type" content="website" />
-    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="icon" type="image/png" href="/assets/aistudio/Levi_AI_Learning_Logo_a2b86b0f.png" />
+    <link rel="apple-touch-icon" href="/assets/aistudio/Levi_AI_Learning_Logo_a2b86b0f.png" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300..800;1,300..800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-    <script>
-      // Suppress unhandled errors and rejections originating from third-party browser extensions (e.g. MetaMask, web3 wallets)
-      window.addEventListener('unhandledrejection', function(event) {
-        var reason = event.reason;
-        var message = (reason && (reason.message || reason.stack || String(reason))) || '';
-        if (
-          message.indexOf('MetaMask') !== -1 ||
-          message.indexOf('nkbihfbeogaeaoehlefnkodbefgpgknn') !== -1 ||
-          message.indexOf('chrome-extension://') !== -1 ||
-          message.indexOf('moz-extension://') !== -1 ||
-          message.indexOf('safari-extension://') !== -1
-        ) {
-          event.preventDefault();
-          event.stopImmediatePropagation();
-        }
-      }, true);
-
-      window.addEventListener('error', function(event) {
-        var filename = event.filename || '';
-        var message = event.message || '';
-        if (
-          filename.indexOf('chrome-extension://') !== -1 ||
-          filename.indexOf('moz-extension://') !== -1 ||
-          filename.indexOf('safari-extension://') !== -1 ||
-          filename.indexOf('nkbihfbeogaeaoehlefnkodbefgpgknn') !== -1 ||
-          message.indexOf('MetaMask') !== -1
-        ) {
-          event.preventDefault();
-          event.stopImmediatePropagation();
-        }
-      }, true);
-    </script>
   </head>
   <body class="bg-slate-50 text-slate-900 antialiased font-sans selection:bg-indigo-100 selection:text-indigo-900">
     <div id="root"></div>

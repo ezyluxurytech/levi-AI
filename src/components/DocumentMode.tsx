@@ -154,8 +154,12 @@ export const DocumentMode: React.FC<DocumentModeProps> = ({
       {/* Top Controls Bar */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-4 rounded-xl border border-slate-200">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600">
-            <FileText className="w-5 h-5" />
+          <div className="w-10 h-10 rounded-xl bg-white border border-slate-200/80 p-1 shadow-2xs flex items-center justify-center shrink-0">
+            <img
+              src="/assets/aistudio/Levi_AI_Learning_Logo_a2b86b0f.png"
+              alt="Levi AI Document Workspace"
+              className="w-full h-full object-contain"
+            />
           </div>
           <div>
             <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
@@ -232,9 +236,16 @@ export const DocumentMode: React.FC<DocumentModeProps> = ({
 
       {/* Empty State when no document has been uploaded */}
       {!currentDoc ? (
-        <div className="bg-white border border-slate-200 rounded-2xl p-12 text-center max-w-xl mx-auto my-8">
-          <div className="w-16 h-16 rounded-full bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 mx-auto mb-4">
-            <FileText className="w-8 h-8" />
+        <div className="bg-white border border-slate-200 rounded-2xl p-12 text-center max-w-xl mx-auto my-8 shadow-xs">
+          <div className="w-20 h-20 rounded-2xl bg-white border border-slate-200/80 p-2.5 shadow-sm flex items-center justify-center mx-auto mb-4">
+            <img
+              src="/assets/aistudio/Levi_AI_Learning_Logo_a2b86b0f.png"
+              alt="Levi AI Document Assistant"
+              className="w-full h-full object-contain"
+            />
+          </div>
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-indigo-50 text-[10px] font-semibold text-indigo-700 mb-2">
+            Learn • Understand • Grow
           </div>
           <h3 className="text-lg font-bold text-slate-900">
             No Academic Document Selected
@@ -274,7 +285,7 @@ export const DocumentMode: React.FC<DocumentModeProps> = ({
                 </h4>
                 <p className="text-xs text-amber-700 mt-1 leading-relaxed">
                   PyMuPDF detected that this document contains scanned images without an underlying selectable text layer.
-                  In accordance with OPEN//BUILD 2026 specifications, OCR is not included in the initial MVP.
+                  OCR is not included for scanned files.
                   Document-grounded question answering requires a PDF with extractable text. Please upload a digital PDF document.
                 </p>
               </div>
