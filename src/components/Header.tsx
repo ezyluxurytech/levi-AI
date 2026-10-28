@@ -31,27 +31,29 @@ export const Header: React.FC<HeaderProps> = ({
   };
 
   return (
-    <header className="sticky top-0 z-30 flex items-center justify-between gap-8 px-6 py-3.5 bg-white border-b border-slate-200">
+    <header className="sticky top-0 z-30 flex items-center justify-between gap-2 sm:gap-8 px-3 sm:px-6 py-2.5 sm:py-3.5 bg-white/95 backdrop-blur-xs border-b border-slate-200">
       {/* Zone 1: Brand / Breadcrumb */}
-      <div className="flex items-center gap-3 shrink-0">
+      <div className="flex items-center gap-2 sm:gap-3 min-w-0 shrink">
         <button
           onClick={onToggleMobileMenu}
-          className="p-1.5 -ml-1.5 text-slate-600 hover:text-slate-900 rounded-md md:hidden hover:bg-slate-100"
+          className="p-1.5 -ml-1 text-slate-600 hover:text-slate-900 rounded-lg md:hidden hover:bg-slate-100 transition-colors"
           aria-label="Open navigation menu"
         >
           <Menu className="w-5 h-5" />
         </button>
-        <div className="flex items-center gap-2.5 text-sm">
-          <img
-            src="/assets/aistudio/Levi_AI_Learning_Logo_a2b86b0f.png"
-            alt="Levi AI"
-            className="w-7 h-7 object-contain rounded-md shrink-0 shadow-2xs border border-slate-200/60"
-          />
+        <div className="flex items-center gap-2 text-xs sm:text-sm min-w-0">
+          <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-[#0A0E27] border border-indigo-950/40 p-0.5 shrink-0 overflow-hidden shadow-2xs">
+            <img
+              src="/assets/aistudio/Levi_AI_Futuristic_Learning_Logo_70308b03.png"
+              alt="Levi AI"
+              className="w-full h-full object-cover rounded"
+            />
+          </div>
           <span className="font-bold text-slate-900 whitespace-nowrap">
             Levi AI
           </span>
           <span className="text-slate-300 font-normal">/</span>
-          <span className="text-slate-600 font-medium whitespace-nowrap">
+          <span className="text-slate-600 font-medium truncate max-w-[125px] sm:max-w-none">
             {getModeTitle()}
           </span>
         </div>
@@ -94,13 +96,14 @@ export const Header: React.FC<HeaderProps> = ({
       </nav>
 
       {/* Zone 3: 1 primary action */}
-      <div className="flex items-center gap-3 shrink-0">
+      <div className="flex items-center gap-2 shrink-0">
         <button
           onClick={onOpenSettings}
-          className="flex items-center gap-2 px-3.5 py-1.5 text-xs font-medium text-slate-700 bg-slate-100 hover:bg-slate-200/80 rounded-lg transition-colors whitespace-nowrap shrink-0 border border-slate-200/60"
+          className="flex items-center gap-1.5 px-2.5 sm:px-3.5 py-1.5 text-xs font-medium text-slate-700 bg-slate-100 hover:bg-slate-200/80 rounded-lg transition-colors whitespace-nowrap shrink-0 border border-slate-200/60"
         >
           <Settings className="w-3.5 h-3.5 text-slate-500" />
-          <span>AI Architecture & Settings</span>
+          <span className="hidden sm:inline">AI Architecture & Settings</span>
+          <span className="sm:hidden text-[11px] font-semibold">Engine</span>
         </button>
       </div>
     </header>

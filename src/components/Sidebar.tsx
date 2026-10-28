@@ -9,6 +9,7 @@ import {
   Layers,
   ChevronRight,
   Sparkles,
+  X,
 } from "lucide-react";
 import { AppMode, ProviderInfo } from "../types/index.ts";
 
@@ -80,22 +81,30 @@ export const Sidebar: React.FC<SidebarProps> = ({
         {/* Brand / Logo Zone */}
         <div className="p-4 border-b border-slate-800/80 flex items-center justify-between">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="w-10 h-10 rounded-xl bg-white p-1 shadow-md shadow-indigo-950/50 shrink-0 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-xl bg-[#0A0E27] border border-indigo-900/60 p-0.5 shadow-md shadow-indigo-950 shrink-0 flex items-center justify-center overflow-hidden">
               <img
-                src="/assets/aistudio/Levi_AI_Learning_Logo_a2b86b0f.png"
-                alt="Levi AI Logo"
-                className="w-full h-full object-contain"
+                src="/assets/aistudio/Levi_AI_Futuristic_Learning_Logo_70308b03.png"
+                alt="Levi AI Futuristic Logo"
+                className="w-full h-full object-cover rounded-lg"
               />
             </div>
             <div className="min-w-0">
               <div className="text-base font-bold text-white tracking-tight flex items-center gap-1.5 truncate">
                 Levi AI
               </div>
-              <p className="text-[10px] text-indigo-300/80 font-medium tracking-wide truncate">
-                Learn • Understand • Grow
+              <p className="text-[10px] text-indigo-300/90 font-medium tracking-wide truncate">
+                Learn ✦ Understand ✦ Grow
               </p>
             </div>
           </div>
+          {/* Mobile Close Button */}
+          <button
+            onClick={onCloseMobile}
+            className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 md:hidden transition-colors"
+            aria-label="Close sidebar navigation"
+          >
+            <X className="w-5 h-5" />
+          </button>
         </div>
 
         {/* Navigation List */}
@@ -177,7 +186,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
               Model: {providerInfo?.model || "Standard"}
             </p>
             <button
-              onClick={onOpenSettings}
+              onClick={() => {
+                onOpenSettings();
+                onCloseMobile();
+              }}
               className="mt-2.5 w-full flex items-center justify-center gap-1.5 py-1.5 px-2 bg-slate-800 hover:bg-slate-700/80 text-slate-300 text-xs rounded font-medium transition-colors"
             >
               <Settings className="w-3 h-3 text-slate-400" />

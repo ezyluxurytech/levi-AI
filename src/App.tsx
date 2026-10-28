@@ -13,6 +13,7 @@ import {
   RecentActivityItem,
 } from "./types/index.ts";
 import { apiClient } from "./services/apiClient.ts";
+import { LayoutDashboard, FileText, BookOpen, Languages } from "lucide-react";
 
 export default function App() {
   const [currentMode, setCurrentMode] = useState<AppMode>("dashboard");
@@ -125,7 +126,7 @@ export default function App() {
           providerInfo={providerInfo}
         />
 
-        <main className="flex-1 p-4 md:p-6 lg:p-8 max-w-7xl w-full mx-auto">
+        <main className="flex-1 p-3 sm:p-4 md:p-6 lg:p-8 max-w-7xl w-full mx-auto pb-24 md:pb-8">
           {currentMode === "dashboard" && (
             <Dashboard
               onSelectMode={(mode) => setCurrentMode(mode)}
@@ -169,6 +170,63 @@ export default function App() {
             />
           )}
         </main>
+
+        {/* Mobile Bottom Navigation Bar (< md) */}
+        <nav
+          aria-label="Mobile Navigation"
+          className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-slate-200 md:hidden flex items-center justify-around py-2 px-1 shadow-lg"
+        >
+          <button
+            onClick={() => setCurrentMode("dashboard")}
+            className={`flex flex-col items-center justify-center flex-1 py-1 transition-colors ${
+              currentMode === "dashboard"
+                ? "text-indigo-600 font-bold"
+                : "text-slate-500 hover:text-slate-800"
+            }`}
+          >
+            <LayoutDashboard className="w-5 h-5 mb-0.5" />
+            <span className="text-[10px] tracking-tight">Overview</span>
+          </button>
+
+          <button
+            onClick={() => setCurrentMode("document")}
+            className={`flex flex-col items-center justify-center flex-1 py-1 relative transition-colors ${
+              currentMode === "document"
+                ? "text-indigo-600 font-bold"
+                : "text-slate-500 hover:text-slate-800"
+            }`}
+          >
+            <FileText className="w-5 h-5 mb-0.5" />
+            <span className="text-[10px] tracking-tight">Documents</span>
+            {uploadedDocuments.length > 0 && (
+              <span className="absolute top-0.5 right-6 w-2 h-2 rounded-full bg-indigo-600" />
+            )}
+          </button>
+
+          <button
+            onClick={() => setCurrentMode("study")}
+            className={`flex flex-col items-center justify-center flex-1 py-1 transition-colors ${
+              currentMode === "study"
+                ? "text-indigo-600 font-bold"
+                : "text-slate-500 hover:text-slate-800"
+            }`}
+          >
+            <BookOpen className="w-5 h-5 mb-0.5" />
+            <span className="text-[10px] tracking-tight">Study</span>
+          </button>
+
+          <button
+            onClick={() => setCurrentMode("language")}
+            className={`flex flex-col items-center justify-center flex-1 py-1 transition-colors ${
+              currentMode === "language"
+                ? "text-indigo-600 font-bold"
+                : "text-slate-500 hover:text-slate-800"
+            }`}
+          >
+            <Languages className="w-5 h-5 mb-0.5" />
+            <span className="text-[10px] tracking-tight">Translate</span>
+          </button>
+        </nav>
       </div>
 
       {/* Settings & Architecture Modal */}

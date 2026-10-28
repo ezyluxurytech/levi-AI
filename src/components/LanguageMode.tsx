@@ -104,11 +104,11 @@ export const LanguageMode: React.FC<LanguageModeProps> = ({
   return (
     <div className="space-y-6 max-w-5xl mx-auto py-2">
       {/* Header Banner */}
-      <div className="bg-white p-5 rounded-xl border border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="bg-white p-4 sm:p-5 rounded-xl border border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-3.5">
-          <div className="w-11 h-11 rounded-xl bg-white border border-slate-200/80 p-1 shadow-xs shrink-0 flex items-center justify-center">
+          <div className="w-11 h-11 rounded-xl bg-[#0A0E27] border border-indigo-900/50 p-1 shadow-xs shrink-0 flex items-center justify-center">
             <img
-              src="/assets/aistudio/Levi_AI_Learning_Logo_a2b86b0f.png"
+              src="/assets/aistudio/Levi_AI_Futuristic_Learning_Logo_70308b03.png"
               alt="Levi AI Translation"
               className="w-full h-full object-contain"
             />
@@ -125,7 +125,7 @@ export const LanguageMode: React.FC<LanguageModeProps> = ({
           </div>
         </div>
 
-        <div className="flex items-center gap-1.5 text-xs text-slate-500 font-medium">
+        <div className="flex flex-wrap items-center gap-1.5 text-xs text-slate-500 font-medium">
           <span>4 Languages</span>
           <span aria-hidden="true">·</span>
           <span>Tonal Diacritics Preservation</span>
@@ -248,17 +248,17 @@ export const LanguageMode: React.FC<LanguageModeProps> = ({
             />
           </div>
 
-          <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
+          <div className="pt-3 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
             <button
               onClick={() => setSourceText("")}
-              className="text-xs text-slate-400 hover:text-slate-600"
+              className="text-xs text-slate-400 hover:text-slate-600 self-start sm:self-auto py-1"
             >
               Clear
             </button>
             <button
               onClick={handleTranslate}
               disabled={isTranslating || !sourceText.trim()}
-              className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors disabled:opacity-50"
+              className="w-full sm:w-auto flex items-center justify-center gap-1.5 px-4 py-2.5 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors disabled:opacity-50"
             >
               <Sparkles className="w-3.5 h-3.5" />
               <span>{isTranslating ? "Translating..." : `Translate to ${targetLang}`}</span>

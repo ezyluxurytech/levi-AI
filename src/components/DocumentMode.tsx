@@ -15,6 +15,7 @@ import {
   Copy,
   Check,
   Search,
+  MessageSquare,
 } from "lucide-react";
 import {
   DocumentMetadata,
@@ -57,6 +58,7 @@ export const DocumentMode: React.FC<DocumentModeProps> = ({
   const [askError, setAskError] = useState<string | null>(null);
   const [textSearchQuery, setTextSearchQuery] = useState("");
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [mobileActiveTab, setMobileActiveTab] = useState<"pages" | "chat">("pages");
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const chatBottomRef = useRef<HTMLDivElement>(null);
@@ -142,6 +144,7 @@ export const DocumentMode: React.FC<DocumentModeProps> = ({
   const jumpToPage = (pageNumber: number) => {
     if (docDetails && pageNumber >= 1 && pageNumber <= docDetails.pages.length) {
       setActivePageIndex(pageNumber - 1);
+      setMobileActiveTab("pages");
     }
   };
 
@@ -154,9 +157,9 @@ export const DocumentMode: React.FC<DocumentModeProps> = ({
       {/* Top Controls Bar */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-4 rounded-xl border border-slate-200">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-white border border-slate-200/80 p-1 shadow-2xs flex items-center justify-center shrink-0">
+          <div className="w-10 h-10 rounded-xl bg-[#0A0E27] border border-indigo-900/50 p-1 shadow-2xs flex items-center justify-center shrink-0">
             <img
-              src="/assets/aistudio/Levi_AI_Learning_Logo_a2b86b0f.png"
+              src="/assets/aistudio/Levi_AI_Futuristic_Learning_Logo_70308b03.png"
               alt="Levi AI Document Workspace"
               className="w-full h-full object-contain"
             />
@@ -177,12 +180,12 @@ export const DocumentMode: React.FC<DocumentModeProps> = ({
         </div>
 
         {/* Upload Button & Selector */}
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap sm:flex-nowrap items-center gap-2">
           {documents.length > 1 && (
             <select
               value={currentDoc?.id || ""}
               onChange={(e) => onSelectDocument(e.target.value)}
-              className="text-xs bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-2 font-medium text-slate-700 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+              className="text-xs bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-2 font-medium text-slate-700 focus:outline-none focus:ring-1 focus:ring-indigo-500 max-w-[160px] sm:max-w-none"
             >
               {documents.map((d) => (
                 <option key={d.id} value={d.id}>
@@ -207,7 +210,7 @@ export const DocumentMode: React.FC<DocumentModeProps> = ({
           <button
             onClick={() => fileInputRef.current?.click()}
             disabled={isUploading}
-            className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors disabled:opacity-50"
+            className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors disabled:opacity-50"
           >
             <Upload className="w-3.5 h-3.5" />
             <span>{isUploading ? "Uploading..." : "Upload New PDF"}</span>
@@ -217,7 +220,7 @@ export const DocumentMode: React.FC<DocumentModeProps> = ({
             <button
               onClick={onLoadSampleDocument}
               disabled={isUploading}
-              className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200/80 rounded-lg transition-colors border border-slate-200"
+              className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200/80 rounded-lg transition-colors border border-slate-200"
               title="Load Computer Networks sample lecture"
             >
               <BookOpen className="w-3.5 h-3.5 text-indigo-600" />
@@ -236,16 +239,16 @@ export const DocumentMode: React.FC<DocumentModeProps> = ({
 
       {/* Empty State when no document has been uploaded */}
       {!currentDoc ? (
-        <div className="bg-white border border-slate-200 rounded-2xl p-12 text-center max-w-xl mx-auto my-8 shadow-xs">
-          <div className="w-20 h-20 rounded-2xl bg-white border border-slate-200/80 p-2.5 shadow-sm flex items-center justify-center mx-auto mb-4">
+        <div className="bg-white border border-slate-200 rounded-2xl p-8 sm:p-12 text-center max-w-xl mx-auto my-6 sm:my-8 shadow-xs">
+          <div className="w-20 h-20 rounded-2xl bg-[#0A0E27] border border-indigo-900/50 p-2 shadow-md flex items-center justify-center mx-auto mb-4">
             <img
-              src="/assets/aistudio/Levi_AI_Learning_Logo_a2b86b0f.png"
+              src="/assets/aistudio/Levi_AI_Futuristic_Learning_Logo_70308b03.png"
               alt="Levi AI Document Assistant"
               className="w-full h-full object-contain"
             />
           </div>
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-indigo-50 text-[10px] font-semibold text-indigo-700 mb-2">
-            Learn • Understand • Grow
+          <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-indigo-50 text-[10px] font-semibold text-indigo-700 mb-2">
+            Learn ✦ Understand ✦ Grow
           </div>
           <h3 className="text-lg font-bold text-slate-900">
             No Academic Document Selected
@@ -253,10 +256,10 @@ export const DocumentMode: React.FC<DocumentModeProps> = ({
           <p className="text-xs text-slate-600 mt-2 max-w-sm mx-auto leading-relaxed">
             Upload your university lecture notes, research paper, or textbook chapter in PDF format (up to 10MB), or test immediately with a sample lecture.
           </p>
-          <div className="mt-5 flex items-center justify-center gap-3">
+          <div className="mt-5 flex flex-col sm:flex-row items-center justify-center gap-3">
             <button
               onClick={() => fileInputRef.current?.click()}
-              className="inline-flex items-center gap-2 px-4 py-2.5 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors"
             >
               <Upload className="w-4 h-4" />
               Select PDF File
@@ -265,7 +268,7 @@ export const DocumentMode: React.FC<DocumentModeProps> = ({
               <button
                 onClick={onLoadSampleDocument}
                 disabled={isUploading}
-                className="inline-flex items-center gap-2 px-4 py-2.5 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors border border-slate-200"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors border border-slate-200"
               >
                 <BookOpen className="w-4 h-4 text-indigo-600" />
                 Load Sample Academic PDF
@@ -292,18 +295,44 @@ export const DocumentMode: React.FC<DocumentModeProps> = ({
             </div>
           )}
 
+          {/* Mobile View Switcher (Pages vs Chat) */}
+          <div className="lg:hidden flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200">
+            <button
+              onClick={() => setMobileActiveTab("pages")}
+              className={`flex-1 flex items-center justify-center gap-2 py-2 text-xs font-semibold rounded-lg transition-all ${
+                mobileActiveTab === "pages"
+                  ? "bg-white text-indigo-700 shadow-2xs font-bold"
+                  : "text-slate-600 hover:text-slate-900"
+              }`}
+            >
+              <FileText className="w-3.5 h-3.5" />
+              <span>Pages ({activePageIndex + 1}/{totalPages})</span>
+            </button>
+            <button
+              onClick={() => setMobileActiveTab("chat")}
+              className={`flex-1 flex items-center justify-center gap-2 py-2 text-xs font-semibold rounded-lg transition-all ${
+                mobileActiveTab === "chat"
+                  ? "bg-white text-indigo-700 shadow-2xs font-bold"
+                  : "text-slate-600 hover:text-slate-900"
+              }`}
+            >
+              <MessageSquare className="w-3.5 h-3.5" />
+              <span>Q&A Chat {chatMessages.length > 0 && `(${chatMessages.length})`}</span>
+            </button>
+          </div>
+
           {/* Document Workspace 2-Column Split */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
             {/* Left Column: Extracted Text & Page Navigation (7 cols) */}
-            <div className="lg:col-span-7 bg-white rounded-xl border border-slate-200 flex flex-col h-[650px] shadow-2xs">
+            <div className={`${mobileActiveTab === "pages" ? "flex" : "hidden lg:flex"} lg:col-span-7 bg-white rounded-xl border border-slate-200 flex-col h-[560px] sm:h-[650px] shadow-2xs`}>
               {/* Header with Page Nav and Search */}
-              <div className="p-3.5 border-b border-slate-200 flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-bold text-slate-800 truncate max-w-[200px]">
+              <div className="p-3 sm:p-3.5 border-b border-slate-200 flex flex-wrap sm:flex-nowrap items-center justify-between gap-2">
+                <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
+                  <span className="text-xs font-bold text-slate-800 truncate max-w-[120px] sm:max-w-[200px]">
                     {currentDoc.filename}
                   </span>
                   <span className="text-slate-300">|</span>
-                  <div className="flex items-center gap-1 text-xs text-slate-600 font-mono">
+                  <div className="flex items-center gap-0.5 sm:gap-1 text-xs text-slate-600 font-mono">
                     <button
                       onClick={() => setActivePageIndex((p) => Math.max(0, p - 1))}
                       disabled={activePageIndex === 0}
@@ -312,7 +341,7 @@ export const DocumentMode: React.FC<DocumentModeProps> = ({
                     >
                       <ChevronLeft className="w-3.5 h-3.5" />
                     </button>
-                    <span className="tabular-nums px-1">
+                    <span className="tabular-nums px-1 text-[11px] sm:text-xs">
                       Page {activePageIndex + 1} / {totalPages}
                     </span>
                     <button
@@ -327,13 +356,13 @@ export const DocumentMode: React.FC<DocumentModeProps> = ({
                 </div>
 
                 {/* In-page search */}
-                <div className="relative w-44">
+                <div className="relative w-full sm:w-44 mt-1 sm:mt-0">
                   <input
                     type="text"
                     placeholder="Find in page..."
                     value={textSearchQuery}
                     onChange={(e) => setTextSearchQuery(e.target.value)}
-                    className="w-full text-xs bg-slate-50 border border-slate-200 rounded-md pl-7 pr-2 py-1 text-slate-700 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                    className="w-full text-xs bg-slate-50 border border-slate-200 rounded-md pl-7 pr-2 py-1.5 text-slate-700 focus:outline-none focus:ring-1 focus:ring-indigo-500"
                   />
                   <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2 top-2" />
                 </div>
@@ -383,7 +412,7 @@ export const DocumentMode: React.FC<DocumentModeProps> = ({
             </div>
 
             {/* Right Column: Grounded Q&A Assistant (5 cols) */}
-            <div className="lg:col-span-5 bg-white rounded-xl border border-slate-200 flex flex-col h-[650px] shadow-2xs">
+            <div className={`${mobileActiveTab === "chat" ? "flex" : "hidden lg:flex"} lg:col-span-5 bg-white rounded-xl border border-slate-200 flex-col h-[560px] sm:h-[650px] shadow-2xs`}>
               {/* Header */}
               <div className="p-3.5 border-b border-slate-200 flex items-center justify-between">
                 <div>

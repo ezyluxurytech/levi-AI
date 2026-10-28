@@ -56,21 +56,21 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
       <div className="bg-white rounded-2xl border border-slate-200 shadow-xl max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150">
         {/* Header */}
-        <div className="p-5 border-b border-slate-200 flex items-center justify-between">
+        <div className="p-4 sm:p-5 border-b border-slate-200 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="w-10 h-10 rounded-xl bg-white border border-slate-200/80 p-1 shadow-2xs flex items-center justify-center shrink-0">
+            <div className="w-10 h-10 rounded-xl bg-[#0A0E27] border border-indigo-900/50 p-1 shadow-2xs flex items-center justify-center shrink-0">
               <img
-                src="/assets/aistudio/Levi_AI_Learning_Logo_a2b86b0f.png"
+                src="/assets/aistudio/Levi_AI_Futuristic_Learning_Logo_70308b03.png"
                 alt="Levi AI"
                 className="w-full h-full object-contain"
               />
             </div>
             <div>
-              <h3 className="text-base font-bold text-slate-900">
-                AI Architecture & Provider Configuration
+              <h3 className="text-sm sm:text-base font-bold text-slate-900">
+                AI Architecture & Engine
               </h3>
-              <p className="text-xs text-slate-500">
-                Replaceable AI Provider Specification
+              <p className="text-[11px] sm:text-xs text-slate-500">
+                Configurable Provider & Open-Weight Fallbacks
               </p>
             </div>
           </div>
@@ -83,9 +83,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
         </div>
 
         {/* Modal Body */}
-        <div className="p-6 overflow-y-auto space-y-6 text-xs text-slate-700">
+        <div className="p-4 sm:p-6 overflow-y-auto space-y-4 sm:space-y-6 text-xs text-slate-700">
           {/* Active Status Banner */}
-          <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between">
+          <div className="p-3.5 sm:p-4 rounded-xl bg-slate-50 border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div>
               <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
                 Current Active Provider
@@ -98,7 +98,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               </p>
             </div>
             <span
-              className={`px-3 py-1 rounded-full text-xs font-semibold ${
+              className={`self-start sm:self-auto px-2.5 py-1 rounded-full text-xs font-semibold ${
                 providerInfo?.isConfigured
                   ? "bg-emerald-100 text-emerald-800"
                   : "bg-amber-100 text-amber-800"
@@ -111,7 +111,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           {/* Architectural Design Note */}
           <div className="p-3.5 rounded-lg bg-indigo-50/70 border border-indigo-100 text-indigo-950 text-xs space-y-1.5">
             <p className="font-bold flex items-center gap-1.5 text-indigo-900">
-              <ShieldCheck className="w-4 h-4 text-indigo-600" />
+              <ShieldCheck className="w-4 h-4 text-indigo-600 shrink-0" />
               Decoupled Architecture:
             </p>
             <p className="text-[11px] leading-relaxed text-indigo-900/90">
@@ -125,7 +125,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               Switch Backend Provider Engine
             </h4>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-3">
               {/* Option 1: Gemini */}
               <button
                 type="button"
@@ -138,7 +138,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               >
                 <div className="flex items-center justify-between mb-1">
                   <span className="font-bold text-slate-900 text-xs">Gemini 3.8 Flash</span>
-                  {selectedType === "gemini" && <CheckCircle2 className="w-4 h-4 text-indigo-600" />}
+                  {selectedType === "gemini" && <CheckCircle2 className="w-4 h-4 text-indigo-600 shrink-0" />}
                 </div>
                 <p className="text-[11px] text-slate-500">
                   Built-in server-side SDK using GEMINI_API_KEY.
@@ -157,7 +157,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               >
                 <div className="flex items-center justify-between mb-1">
                   <span className="font-bold text-slate-900 text-xs">Open-Weight</span>
-                  {selectedType === "custom" && <CheckCircle2 className="w-4 h-4 text-indigo-600" />}
+                  {selectedType === "custom" && <CheckCircle2 className="w-4 h-4 text-indigo-600 shrink-0" />}
                 </div>
                 <p className="text-[11px] text-slate-500">
                   Local Ollama, vLLM, or Hugging Face endpoint.
@@ -176,7 +176,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               >
                 <div className="flex items-center justify-between mb-1">
                   <span className="font-bold text-slate-900 text-xs">Offline / Test</span>
-                  {selectedType === "offline" && <CheckCircle2 className="w-4 h-4 text-indigo-600" />}
+                  {selectedType === "offline" && <CheckCircle2 className="w-4 h-4 text-indigo-600 shrink-0" />}
                 </div>
                 <p className="text-[11px] text-slate-500">
                   Tests fallback and error states when disconnected.
@@ -224,7 +224,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           {/* Python Backend Reference Info */}
           <div className="rounded-xl border border-slate-200 p-4 bg-slate-50 space-y-2">
             <div className="flex items-center gap-2 text-xs font-bold text-slate-800">
-              <Code2 className="w-4 h-4 text-indigo-600" />
+              <Code2 className="w-4 h-4 text-indigo-600 shrink-0" />
               Python FastAPI Backend Codebase Included
             </div>
             <p className="text-[11px] text-slate-600 leading-relaxed">
@@ -240,17 +240,17 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
         </div>
 
         {/* Footer Actions */}
-        <div className="p-4 border-t border-slate-200 bg-slate-50 flex items-center justify-between">
+        <div className="p-3 sm:p-4 border-t border-slate-200 bg-slate-50 flex flex-col-reverse sm:flex-row sm:items-center justify-between gap-2.5">
           <button
             onClick={onClose}
-            className="px-4 py-2 text-xs font-medium text-slate-600 hover:text-slate-800"
+            className="w-full sm:w-auto px-4 py-2 text-xs font-medium text-slate-600 hover:text-slate-800 text-center"
           >
             Close
           </button>
           <button
             onClick={handleApplyConfig}
             disabled={isUpdating}
-            className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors disabled:opacity-50"
+            className="w-full sm:w-auto flex items-center justify-center gap-1.5 px-4 py-2.5 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors disabled:opacity-50"
           >
             {isUpdating && <RefreshCw className="w-3.5 h-3.5 animate-spin" />}
             <span>Apply Provider Configuration</span>
