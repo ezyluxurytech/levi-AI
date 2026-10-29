@@ -18,12 +18,25 @@ import {
 } from "./src/services/documentProcessor.ts";
 
 dotenv.config();
+process.env.DISABLE_HMR = "true";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
+
+// Port detection: check CLI arguments (--port 3000) or PORT env var, fallback to 3000
+function getPort(): number {
+  const portArgIndex = process.argv.indexOf("--port");
+  if (portArgIndex !== -1 && process.argv[portArgIndex + 1]) {
+    return parseInt(process.argv[portArgIndex + 1], 10);
+  }
+  if (process.env.PORT) {
+    return parseInt(process.env.PORT, 10);
+  }
+  return 3000;
+}
+const PORT = getPort();
 
 // Body parser
 app.use(express.json({ limit: "15mb" }));
@@ -84,7 +97,7 @@ async function executeWithFallback<T>(
   }
 }
 
-// Multer memory storage for PDF processing
+// Multer memory storage for single PDF processing
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: {
@@ -97,6 +110,26 @@ const upload = multer({
       cb(null, true);
     } else {
       cb(new Error("Invalid file format. Only PDF files are supported."));
+    }
+  },
+});
+
+// Multer memory storage for batch / folder uploads (up to 50 files)
+// Gracefully ignores non-PDF files without throwing an error that would abort the whole folder
+const batchUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 10 * 1024 * 1024, // 10MB limit per file
+    files: 50,
+  },
+  fileFilter: (_req, file, cb) => {
+    const isPdfMime = file.mimetype === "application/pdf";
+    const isPdfExt = path.extname(file.originalname).toLowerCase() === ".pdf";
+    if (isPdfMime || isPdfExt) {
+      cb(null, true);
+    } else {
+      // Pass false to safely ignore non-PDF files (e.g. .DS_Store, images)
+      cb(null, false);
     }
   },
 });
@@ -199,6 +232,70 @@ app.post("/api/documents/upload", (req: Request, res: Response) => {
         error: `Could not extract text from PDF: ${processError.message || "Unknown error"}`,
       });
     }
+  });
+});
+
+// 2b. Batch / Folder Upload & Text Extraction (supports full directory uploads)
+app.post("/api/documents/batch", (req: Request, res: Response) => {
+  batchUpload.array("files", 50)(req, res, async (err: any) => {
+    if (err) {
+      if (err.code === "LIMIT_FILE_SIZE") {
+        return res.status(400).json({
+          error: "One or more files in the folder exceed the 10MB limit.",
+        });
+      }
+      return res.status(400).json({ error: err.message || "Failed to process folder upload." });
+    }
+
+    const files = (req.files as Express.Multer.File[]) || [];
+    if (!files || files.length === 0) {
+      return res.status(400).json({ error: "No files found in the folder upload." });
+    }
+
+    const pdfFiles = files.filter((f) => f.originalname.toLowerCase().endsWith(".pdf"));
+    if (pdfFiles.length === 0) {
+      return res.status(400).json({
+        error: `No PDF files found in the uploaded folder (${files.length} non-PDF file(s) ignored). Please upload a folder containing .pdf lecture notes or textbooks.`,
+      });
+    }
+
+    const processedDocs: any[] = [];
+    const errors: any[] = [];
+
+    for (const file of pdfFiles) {
+      try {
+        const processedDoc = await processPdfBuffer(file.buffer, file.originalname, file.size);
+        documentsStore.set(processedDoc.id, processedDoc);
+        processedDocs.push({
+          id: processedDoc.id,
+          filename: processedDoc.filename,
+          fileSize: processedDoc.fileSize,
+          pageCount: processedDoc.pageCount,
+          isScannedOnly: processedDoc.isScannedOnly,
+          passagesCount: processedDoc.passages.length,
+          uploadedAt: processedDoc.uploadedAt,
+          message: processedDoc.isScannedOnly
+            ? "Uploaded without selectable text (scanned)."
+            : `Extracted ${processedDoc.pageCount} page(s).`,
+        });
+      } catch (procErr: any) {
+        errors.push({ filename: file.originalname, error: procErr.message || "Extraction failed" });
+      }
+    }
+
+    if (processedDocs.length === 0) {
+      return res.status(422).json({
+        error: `Could not extract text from any PDFs in the folder: ${errors.map((e) => `${e.filename} (${e.error})`).join(", ")}`,
+      });
+    }
+
+    return res.status(201).json({
+      documents: processedDocs,
+      totalCount: processedDocs.length,
+      ignoredCount: files.length - pdfFiles.length,
+      errors: errors.length > 0 ? errors : undefined,
+      message: `Successfully processed ${processedDocs.length} PDF(s) from the folder.${files.length - pdfFiles.length > 0 ? ` (${files.length - pdfFiles.length} non-PDF file(s) ignored)` : ""}`,
+    });
   });
 });
 
@@ -386,7 +483,8 @@ app.post("/api/documents/:id/question", async (req: Request, res: Response) => {
 
 // 4. Study Mode: Summarize
 app.post("/api/study/summarize", async (req: Request, res: Response) => {
-  const { text, format = "bullets" } = req.body;
+  const text = req.body.text || req.body.notes;
+  const format = req.body.format || "bullets";
   if (!text || typeof text !== "string" || text.trim().length < 20) {
     return res.status(400).json({ error: "Please enter at least 20 characters of study notes to summarize." });
   }
@@ -463,28 +561,48 @@ app.post("/api/translate", async (req: Request, res: Response) => {
   }
 });
 
+// Unmatched API routes handler
+app.all("/api/*", (_req: Request, res: Response) => {
+  res.status(404).json({ error: "API endpoint not found" });
+});
+
 /* ==========================================================================
    Vite & Static Server Setup
    ========================================================================== */
 
 async function startServer() {
   const isDev = process.env.NODE_ENV !== "production";
+  const distPath = path.resolve(__dirname, "dist");
 
-  if (isDev) {
+  if (!isDev && fs.existsSync(distPath) && fs.existsSync(path.join(distPath, "index.html"))) {
+    console.log(`[Levi AI] Serving production build from ${distPath}`);
+    app.use(express.static(distPath));
+    app.get("*", (_req: Request, res: Response) => {
+      res.sendFile(path.join(distPath, "index.html"));
+    });
+  } else {
+    console.log("[Levi AI] Mounting Vite middleware");
     const { createServer: createViteServer } = await import("vite");
     const vite = await createViteServer({
       server: { middlewareMode: true, hmr: false },
       appType: "spa",
     });
     app.use(vite.middlewares);
-  } else {
-    const distPath = path.resolve(__dirname, "dist");
-    if (fs.existsSync(distPath)) {
-      app.use(express.static(distPath));
-      app.get("*", (_req, res) => {
-        res.sendFile(path.join(distPath, "index.html"));
-      });
-    }
+
+    app.use("*", async (req: Request, res: Response, next) => {
+      if (req.originalUrl.startsWith("/api/")) {
+        return res.status(404).json({ error: "API route not found" });
+      }
+      try {
+        const url = req.originalUrl;
+        let template = fs.readFileSync(path.resolve(__dirname, "index.html"), "utf-8");
+        template = await vite.transformIndexHtml(url, template);
+        res.status(200).set({ "Content-Type": "text/html" }).end(template);
+      } catch (e) {
+        vite.ssrFixStacktrace(e as Error);
+        next(e);
+      }
+    });
   }
 
   app.listen(PORT, "0.0.0.0", () => {

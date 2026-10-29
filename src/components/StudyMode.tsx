@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   BookOpen,
   Sparkles,
@@ -16,6 +16,7 @@ import {
   AlertTriangle,
   Download,
   FileDown,
+  Compass,
 } from "lucide-react";
 import {
   QuizQuestion,
@@ -25,13 +26,14 @@ import {
 } from "../types/index.ts";
 import { apiClient } from "../services/apiClient.ts";
 
+export type StudyTab = "summarize" | "explain" | "quiz";
+
 interface StudyModeProps {
   providerInfo: ProviderInfo | null;
   onOpenSettings: () => void;
   onLogActivity: (title: string, details?: string) => void;
+  initialTab?: StudyTab;
 }
-
-type StudyTab = "summarize" | "explain" | "quiz";
 
 const SAMPLE_NOTES = [
   {
@@ -90,8 +92,15 @@ export const StudyMode: React.FC<StudyModeProps> = ({
   providerInfo,
   onOpenSettings,
   onLogActivity,
+  initialTab = "summarize",
 }) => {
-  const [activeTab, setActiveTab] = useState<StudyTab>("summarize");
+  const [activeTab, setActiveTab] = useState<StudyTab>(initialTab);
+
+  useEffect(() => {
+    if (initialTab) {
+      setActiveTab(initialTab);
+    }
+  }, [initialTab]);
 
   // Shared study content input
   const [studyInput, setStudyInput] = useState(SAMPLE_NOTES[0].content);
@@ -132,10 +141,10 @@ export const StudyMode: React.FC<StudyModeProps> = ({
     let filename = `levi-ai-study-summary-${dateStr}`;
 
     if (format === "markdown") {
-      content = `# Study Summary: Levi AI Academic Companion\n*Generated on: ${new Date().toLocaleString()}*\n*Estimated Reading Time: ~${summaryResult.readingTimeMinutes} min*\n\n---\n\n## Overview\n${summaryResult.summary}\n\n## Key Takeaways for Students\n${summaryResult.keyPoints.map((pt, i) => `${i + 1}. ${pt}`).join("\n")}\n\n---\n\n### Original Study Notes Source\n${studyInput}\n`;
+      content = `# Study Summary: Levi AI\n*Generated on: ${new Date().toLocaleString()}*\n*Estimated Reading Time: ~${summaryResult.readingTimeMinutes} min*\n\n---\n\n## Overview\n${summaryResult.summary}\n\n## Key Takeaways for Students\n${summaryResult.keyPoints.map((pt, i) => `${i + 1}. ${pt}`).join("\n")}\n\n---\n\n### Original Study Notes Source\n${studyInput}\n`;
       filename += ".md";
     } else {
-      content = `LEVI AI ACADEMIC STUDY SUMMARY\nGenerated: ${new Date().toLocaleString()}\nEstimated Reading Time: ~${summaryResult.readingTimeMinutes} min\n\n========================================\nOVERVIEW:\n${summaryResult.summary}\n\n========================================\nKEY TAKEAWAYS FOR STUDENTS:\n${summaryResult.keyPoints.map((pt, i) => `[${i + 1}] ${pt}`).join("\n")}\n\n========================================\nORIGINAL STUDY NOTES SOURCE:\n${studyInput}\n`;
+      content = `LEVI AI — STUDY SUMMARY\nGenerated: ${new Date().toLocaleString()}\nEstimated Reading Time: ~${summaryResult.readingTimeMinutes} min\n\n========================================\nOVERVIEW:\n${summaryResult.summary}\n\n========================================\nKEY TAKEAWAYS FOR STUDENTS:\n${summaryResult.keyPoints.map((pt, i) => `[${i + 1}] ${pt}`).join("\n")}\n\n========================================\nORIGINAL STUDY NOTES SOURCE:\n${studyInput}\n`;
       filename += ".txt";
     }
 
@@ -179,9 +188,9 @@ export const StudyMode: React.FC<StudyModeProps> = ({
     setExplainError(null);
     setIsExplaining(true);
     try {
-      const res = await apiClient.explainConcept(conceptName, conceptContext);
+      const res = await apiClient.explainConcept(conceptName.trim(), conceptContext.trim());
       setExplanationResult(res);
-      onLogActivity(`Explained Concept: ${conceptName}`);
+      onLogActivity(`Explained Concept: ${res.concept}`);
     } catch (err: any) {
       setExplainError(err.message || "Failed to explain concept.");
     } finally {
@@ -190,21 +199,19 @@ export const StudyMode: React.FC<StudyModeProps> = ({
   };
 
   const handleGenerateQuiz = async () => {
-    if (!studyInput.trim() || studyInput.trim().length < 30) {
-      setQuizError("Please enter sufficient study notes to generate practice questions.");
-      return;
-    }
+    const contextToUse = studyInput.trim() || SAMPLE_NOTES[0].content;
     setQuizError(null);
     setIsGeneratingQuiz(true);
     setUserAnswers({});
     setShowHintFor({});
     setQuizSubmitted(false);
+
     try {
-      const questions = await apiClient.generateQuiz(studyInput, 4);
+      const questions = await apiClient.generateQuiz(contextToUse, 4);
       setQuizQuestions(questions);
-      onLogActivity("Generated Practice Quiz", `${questions.length} questions`);
+      onLogActivity("Generated Practice Quiz", `${questions.length} questions prepared`);
     } catch (err: any) {
-      setQuizError(err.message || "Failed to generate practice quiz.");
+      setQuizError(err.message || "Failed to generate quiz.");
     } finally {
       setIsGeneratingQuiz(false);
     }
@@ -220,58 +227,58 @@ export const StudyMode: React.FC<StudyModeProps> = ({
   return (
     <div className="space-y-6 max-w-6xl mx-auto py-2">
       {/* Header Banner */}
-      <div className="bg-white p-4 sm:p-5 rounded-xl border border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="bg-[#10182A] p-4 sm:p-5 rounded-2xl border border-[#1F2942] flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-sm">
         <div className="flex items-center gap-3.5">
-          <div className="w-11 h-11 rounded-xl bg-[#0A0E27] border border-indigo-900/50 p-1 shadow-xs shrink-0 flex items-center justify-center">
+          <div className="w-11 h-11 rounded-xl bg-[#080D1B] border border-[#B6A1FF]/40 p-1 shadow-[0_0_15px_rgba(182,161,255,0.18)] shrink-0 flex items-center justify-center">
             <img
               src="/assets/aistudio/Levi_AI_Futuristic_Learning_Logo_70308b03.png"
-              alt="Levi AI Study Engine"
-              className="w-full h-full object-contain"
+              alt="Levi AI"
+              className="w-full h-full object-cover rounded-lg"
             />
           </div>
           <div>
             <div className="flex flex-wrap items-center gap-2">
-              <h2 className="text-base font-bold text-slate-900">
-                Study & Practice Engine
+              <h2 className="text-base font-bold text-white tracking-tight">
+                Study & Synthesis
               </h2>
-              <span className="text-[11px] font-mono text-slate-500 hidden sm:inline">
-                [Summarizer · Explainer · Interactive Quiz]
+              <span className="text-[11px] font-mono text-[#B6A1FF] bg-[#080D1B] px-2 py-0.5 rounded border border-[#1F2942]">
+                Synthesis · Explainer · Interactive Quiz
               </span>
             </div>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Transform dense university lecture notes into structured executive summaries, conceptual analogies, and self-testing quizzes.
+            <p className="text-xs text-slate-400 mt-0.5">
+              Transform dense lecture notes into structured executive summaries, conceptual analogies, and self-testing quizzes.
             </p>
           </div>
         </div>
 
         {/* Tab Switcher - Responsive horizontal scrollable pills */}
-        <div className="flex items-center gap-1 p-1 bg-slate-100 rounded-lg shrink-0 overflow-x-auto max-w-full">
+        <div className="flex items-center gap-1.5 p-1.5 bg-[#080D1B] rounded-xl border border-[#1F2942] shrink-0 overflow-x-auto max-w-full">
           <button
             onClick={() => setActiveTab("summarize")}
-            className={`flex-1 sm:flex-initial whitespace-nowrap px-3 py-1.5 text-xs font-semibold rounded-md transition-colors ${
+            className={`flex-1 sm:flex-initial whitespace-nowrap px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all ${
               activeTab === "summarize"
-                ? "bg-white text-slate-900 shadow-xs"
-                : "text-slate-600 hover:text-slate-900"
+                ? "bg-[#10182A] text-[#B6A1FF] border border-[#B6A1FF]/40 shadow-[0_0_12px_rgba(182,161,255,0.15)] font-bold"
+                : "text-slate-400 hover:text-white"
             }`}
           >
             Summarize Notes
           </button>
           <button
             onClick={() => setActiveTab("explain")}
-            className={`flex-1 sm:flex-initial whitespace-nowrap px-3 py-1.5 text-xs font-semibold rounded-md transition-colors ${
+            className={`flex-1 sm:flex-initial whitespace-nowrap px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all ${
               activeTab === "explain"
-                ? "bg-white text-slate-900 shadow-xs"
-                : "text-slate-600 hover:text-slate-900"
+                ? "bg-[#10182A] text-[#48DDF7] border border-[#48DDF7]/40 shadow-[0_0_12px_rgba(72,221,247,0.15)] font-bold"
+                : "text-slate-400 hover:text-white"
             }`}
           >
             Explain Concept
           </button>
           <button
             onClick={() => setActiveTab("quiz")}
-            className={`flex-1 sm:flex-initial whitespace-nowrap px-3 py-1.5 text-xs font-semibold rounded-md transition-colors ${
+            className={`flex-1 sm:flex-initial whitespace-nowrap px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all ${
               activeTab === "quiz"
-                ? "bg-white text-slate-900 shadow-xs"
-                : "text-slate-600 hover:text-slate-900"
+                ? "bg-[#10182A] text-amber-400 border border-amber-400/40 shadow-[0_0_12px_rgba(245,158,11,0.15)] font-bold"
+                : "text-slate-400 hover:text-white"
             }`}
           >
             Practice Quiz
@@ -281,23 +288,23 @@ export const StudyMode: React.FC<StudyModeProps> = ({
 
       {/* Disconnected Provider Notification */}
       {providerInfo && !providerInfo.isConfigured && (
-        <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 flex items-start justify-between gap-3">
+        <div className="p-4 rounded-2xl bg-amber-950/40 border border-amber-800 text-amber-200 flex items-start justify-between gap-3">
           <div className="flex items-start gap-2.5">
-            <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+            <AlertTriangle className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
             <div>
-              <p className="text-xs font-bold uppercase tracking-wider text-amber-800">
-                AI Provider Not Configured
+              <p className="text-xs font-bold uppercase tracking-wider text-amber-300 font-mono">
+                AI Provider Offline / Standby
               </p>
-              <p className="text-xs text-amber-700 mt-0.5">
-                Levi AI does not return random or fabricated AI answers when an AI provider is not connected.
+              <p className="text-xs text-amber-200/90 mt-0.5">
+                Levi AI does not return fabricated or hallucinatory responses when an AI provider is not connected.
               </p>
             </div>
           </div>
           <button
             onClick={onOpenSettings}
-            className="px-3 py-1.5 text-xs font-semibold text-amber-900 bg-amber-100 hover:bg-amber-200/80 rounded-lg border border-amber-300 transition-colors shrink-0"
+            className="px-3.5 py-1.5 text-xs font-semibold text-amber-200 bg-amber-900/60 hover:bg-amber-900 rounded-xl border border-amber-700 transition-colors shrink-0"
           >
-            Connect AI Provider
+            Connect Provider
           </button>
         </div>
       )}
@@ -306,10 +313,10 @@ export const StudyMode: React.FC<StudyModeProps> = ({
       {activeTab === "summarize" && (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
           {/* Notes Input Area (6 cols) */}
-          <div className="lg:col-span-6 bg-white rounded-xl border border-slate-200 p-5 space-y-4">
+          <div className="lg:col-span-6 bg-[#10182A] rounded-2xl border border-[#1F2942] p-5 space-y-4 shadow-sm">
             <div className="flex items-center justify-between">
-              <label className="text-xs font-bold text-slate-800 uppercase tracking-wider">
-                Lecture Notes / Text
+              <label className="text-xs font-bold text-white uppercase tracking-wider font-mono">
+                Lecture Notes / Material
               </label>
               <span className="text-[11px] font-mono text-slate-400 tabular-nums">
                 {studyInput.split(/\s+/).filter(Boolean).length} words
@@ -318,12 +325,12 @@ export const StudyMode: React.FC<StudyModeProps> = ({
 
             {/* Sample Preset Buttons */}
             <div className="flex flex-wrap items-center gap-1.5">
-              <span className="text-[11px] text-slate-400 font-medium mr-1">Sample:</span>
+              <span className="text-[11px] text-slate-500 font-mono mr-1">Presets:</span>
               {SAMPLE_NOTES.map((sample, idx) => (
                 <button
                   key={idx}
                   onClick={() => setStudyInput(sample.content)}
-                  className="text-[11px] px-2 py-1 bg-slate-100 hover:bg-indigo-50 hover:text-indigo-700 text-slate-600 rounded border border-slate-200 transition-colors"
+                  className="text-[11px] px-2.5 py-1 bg-[#080D1B] hover:bg-[#162238] hover:text-[#B6A1FF] text-slate-300 rounded-lg border border-[#1F2942] transition-colors"
                 >
                   {sample.title.split(":")[0]}
                 </button>
@@ -335,17 +342,17 @@ export const StudyMode: React.FC<StudyModeProps> = ({
               value={studyInput}
               onChange={(e) => setStudyInput(e.target.value)}
               placeholder="Paste lecture notes, textbook excerpt, or study material here..."
-              className="w-full text-xs font-sans p-3 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-indigo-500 leading-relaxed resize-y"
+              className="w-full text-xs font-sans p-3.5 bg-[#080D1B] border border-[#1F2942] rounded-xl text-slate-200 placeholder-slate-500 focus:outline-none focus:border-[#B6A1FF]/50 leading-relaxed resize-y"
             />
 
             {/* Format Selector & Submit */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2">
-              <div className="flex items-center gap-1.5">
-                <span className="text-xs text-slate-500 font-medium">Format:</span>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-slate-400 font-medium">Format:</span>
                 <select
                   value={summaryFormat}
                   onChange={(e: any) => setSummaryFormat(e.target.value)}
-                  className="text-xs bg-slate-50 border border-slate-200 rounded-md px-2 py-1.5 text-slate-700 font-medium focus:outline-none"
+                  className="text-xs bg-[#080D1B] border border-[#1F2942] rounded-lg px-2.5 py-1.5 text-slate-200 font-medium focus:outline-none cursor-pointer"
                 >
                   <option value="bullets">Bullet Points & Highlights</option>
                   <option value="executive">Executive Summary</option>
@@ -356,7 +363,7 @@ export const StudyMode: React.FC<StudyModeProps> = ({
               <button
                 onClick={handleSummarize}
                 disabled={isSummarizing}
-                className="flex items-center justify-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors disabled:opacity-50"
+                className="flex items-center justify-center gap-1.5 px-4 py-2.5 text-xs font-bold text-[#080D1B] bg-gradient-to-r from-[#B6A1FF] to-violet-300 hover:brightness-110 rounded-xl transition-all shadow-[0_0_12px_rgba(182,161,255,0.25)] disabled:opacity-50"
               >
                 <Sparkles className="w-3.5 h-3.5" />
                 <span>{isSummarizing ? "Synthesizing Summary..." : "Generate Summary"}</span>
@@ -364,75 +371,78 @@ export const StudyMode: React.FC<StudyModeProps> = ({
             </div>
 
             {summaryError && (
-              <p className="text-xs text-red-600 bg-red-50 p-2.5 rounded-lg border border-red-200">
+              <p className="text-xs text-red-300 bg-red-950/40 p-3 rounded-xl border border-red-800">
                 {summaryError}
               </p>
             )}
           </div>
 
           {/* Summary Output Area (6 cols) */}
-          <div className="lg:col-span-6 bg-white rounded-xl border border-slate-200 p-5 space-y-4 min-h-[460px] flex flex-col justify-between">
+          <div className="lg:col-span-6 bg-[#10182A] rounded-2xl border border-[#1F2942] p-5 space-y-4 min-h-[460px] flex flex-col justify-between shadow-sm">
             <div>
-              <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-slate-200">
-                <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
+              <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-[#1F2942]">
+                <h3 className="text-xs font-bold text-white uppercase tracking-wider font-mono">
                   Synthesized Study Summary
                 </h3>
                 {summaryResult && (
                   <div className="flex items-center gap-1.5">
-                    <span className="text-[11px] text-slate-500 hidden sm:flex items-center gap-1 mr-1">
-                      <Clock className="w-3 h-3" />
-                      {summaryResult.readingTimeMinutes} min read
+                    <span className="text-[11px] text-slate-400 hidden sm:flex items-center gap-1 mr-1 font-mono">
+                      <Clock className="w-3 h-3 text-[#B6A1FF]" />
+                      ~{summaryResult.readingTimeMinutes} min read
                     </span>
                     <button
                       onClick={() => handleExportSummary("markdown")}
-                      className="inline-flex items-center gap-1 px-2 py-1 text-[11px] font-semibold text-slate-700 bg-slate-100 hover:bg-indigo-50 hover:text-indigo-700 rounded-md border border-slate-200 transition-colors"
+                      className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold text-[#B6A1FF] bg-[#080D1B] hover:bg-[#162238] rounded-lg border border-[#B6A1FF]/30 transition-colors"
                       title="Download Summary as Markdown (.md)"
                     >
-                      <Download className="w-3 h-3 text-indigo-600" />
+                      <Download className="w-3 h-3 text-[#B6A1FF]" />
                       <span>.MD</span>
                     </button>
                     <button
                       onClick={() => handleExportSummary("text")}
-                      className="inline-flex items-center gap-1 px-2 py-1 text-[11px] font-semibold text-slate-700 bg-slate-100 hover:bg-indigo-50 hover:text-indigo-700 rounded-md border border-slate-200 transition-colors"
+                      className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold text-[#48DDF7] bg-[#080D1B] hover:bg-[#162238] rounded-lg border border-[#48DDF7]/30 transition-colors"
                       title="Download Summary as Plain Text (.txt)"
                     >
-                      <FileDown className="w-3 h-3 text-indigo-600" />
+                      <FileDown className="w-3 h-3 text-[#48DDF7]" />
                       <span>.TXT</span>
                     </button>
                     <button
                       onClick={() => handleCopy(summaryResult.summary, "sum")}
-                      className="p-1.5 text-slate-500 hover:text-slate-800 rounded hover:bg-slate-100"
-                      title="Copy summary"
+                      className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-[#080D1B] transition-colors"
+                      title="Copy summary text"
                     >
-                      {copiedKey === "sum" ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                      {copiedKey === "sum" ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
                     </button>
                   </div>
                 )}
               </div>
 
               {!summaryResult ? (
-                <div className="py-20 text-center text-slate-400">
-                  <FileText className="w-8 h-8 mx-auto mb-2 text-slate-300" />
-                  <p className="text-xs font-medium">Ready to summarize study material</p>
-                  <p className="text-[11px] text-slate-400 mt-1 max-w-xs mx-auto">
-                    Click "Generate Summary" to extract core insights and exam-focused takeaways.
+                <div className="py-24 text-center text-slate-500">
+                  <FileText className="w-10 h-10 mx-auto mb-2 text-slate-600" />
+                  <p className="text-xs font-semibold text-slate-300">Ready to synthesize study notes</p>
+                  <p className="text-[11px] text-slate-500 mt-1 max-w-xs mx-auto leading-relaxed">
+                    Click "Generate Summary" to extract core insights, structural concepts, and exam-focused takeaways.
                   </p>
                 </div>
               ) : (
                 <div className="mt-4 space-y-4">
-                  <div className="text-xs text-slate-800 leading-relaxed bg-slate-50/80 p-4 rounded-lg border border-slate-100">
-                    <p className="font-semibold text-slate-900 mb-1.5">Overview:</p>
+                  <div className="text-xs text-slate-200 leading-relaxed bg-[#080D1B] p-4 rounded-xl border border-[#1F2942]">
+                    <p className="font-bold text-white mb-1.5 text-xs flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-[#B6A1FF]" />
+                      Executive Overview:
+                    </p>
                     <p className="whitespace-pre-wrap">{summaryResult.summary}</p>
                   </div>
 
                   <div>
-                    <p className="text-xs font-bold text-slate-800 mb-2">
+                    <p className="text-xs font-bold text-white mb-2 font-mono uppercase tracking-wider text-[11px]">
                       Key Takeaways for Students:
                     </p>
                     <ul className="space-y-2">
                       {summaryResult.keyPoints.map((point, idx) => (
-                        <li key={idx} className="flex items-start gap-2 text-xs text-slate-700">
-                          <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 shrink-0 mt-1.5" />
+                        <li key={idx} className="flex items-start gap-2.5 text-xs text-slate-300 bg-[#080D1B]/60 p-2.5 rounded-lg border border-[#1F2942]/60">
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#B6A1FF] shrink-0 mt-1.5" />
                           <span>{point}</span>
                         </li>
                       ))}
@@ -443,26 +453,26 @@ export const StudyMode: React.FC<StudyModeProps> = ({
             </div>
 
             {summaryResult && (
-              <div className="pt-4 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-[11px] text-slate-400">
+              <div className="pt-4 border-t border-[#1F2942] flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-[11px] text-slate-400">
                 <div className="flex flex-wrap items-center gap-2">
                   <button
                     onClick={() => handleExportSummary("markdown")}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-indigo-50 hover:text-indigo-700 rounded-lg border border-slate-200 transition-colors"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-200 bg-[#080D1B] hover:bg-[#162238] hover:text-[#B6A1FF] rounded-xl border border-[#1F2942] hover:border-[#B6A1FF]/40 transition-colors"
                   >
-                    <Download className="w-3.5 h-3.5 text-indigo-600" />
-                    <span>Export Markdown (.md)</span>
+                    <Download className="w-3.5 h-3.5 text-[#B6A1FF]" />
+                    <span>Download Markdown (.md)</span>
                   </button>
                   <button
                     onClick={() => handleExportSummary("text")}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-indigo-50 hover:text-indigo-700 rounded-lg border border-slate-200 transition-colors"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-200 bg-[#080D1B] hover:bg-[#162238] hover:text-[#48DDF7] rounded-xl border border-[#1F2942] hover:border-[#48DDF7]/40 transition-colors"
                   >
-                    <FileDown className="w-3.5 h-3.5 text-indigo-600" />
-                    <span>Export Text (.txt)</span>
+                    <FileDown className="w-3.5 h-3.5 text-[#48DDF7]" />
+                    <span>Download Text (.txt)</span>
                   </button>
                 </div>
                 <button
                   onClick={() => setActiveTab("quiz")}
-                  className="text-xs font-semibold text-indigo-600 hover:text-indigo-800 flex items-center gap-1 self-end sm:self-auto"
+                  className="text-xs font-semibold text-[#B6A1FF] hover:underline flex items-center gap-1 self-end sm:self-auto"
                 >
                   Generate Quiz from these notes &rarr;
                 </button>
@@ -475,17 +485,17 @@ export const StudyMode: React.FC<StudyModeProps> = ({
       {/* TAB 2: EXPLAIN CONCEPT */}
       {activeTab === "explain" && (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-          <div className="lg:col-span-5 bg-white rounded-xl border border-slate-200 p-5 space-y-4">
-            <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
-              Concept Explainer
+          <div className="lg:col-span-5 bg-[#10182A] rounded-2xl border border-[#1F2942] p-5 space-y-4 shadow-sm">
+            <h3 className="text-xs font-bold text-white uppercase tracking-wider font-mono">
+              Concept Explainer & Analogy Engine
             </h3>
-            <p className="text-xs text-slate-500 leading-relaxed">
+            <p className="text-xs text-slate-400 leading-relaxed">
               Struggling with a convoluted theorem or theory? Enter any academic term to receive an intuitive plain-language breakdown and a memorable analogy.
             </p>
 
             <div className="space-y-3">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                <label className="block text-xs font-semibold text-slate-300 mb-1">
                   Concept or Theory Name
                 </label>
                 <input
@@ -493,12 +503,12 @@ export const StudyMode: React.FC<StudyModeProps> = ({
                   value={conceptName}
                   onChange={(e) => setConceptName(e.target.value)}
                   placeholder="e.g. Belady's Anomaly, CAP Theorem, Photosystem II..."
-                  className="w-full text-xs bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-slate-800 focus:outline-none focus:ring-1 focus:ring-indigo-500 font-medium"
+                  className="w-full text-xs bg-[#080D1B] border border-[#1F2942] rounded-xl p-2.5 text-white placeholder-slate-500 focus:outline-none focus:border-[#48DDF7]/50 font-medium"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                <label className="block text-xs font-semibold text-slate-300 mb-1">
                   Course or Context (Optional)
                 </label>
                 <input
@@ -506,14 +516,14 @@ export const StudyMode: React.FC<StudyModeProps> = ({
                   value={conceptContext}
                   onChange={(e) => setConceptContext(e.target.value)}
                   placeholder="e.g. Operating Systems 300-level, Organic Chemistry..."
-                  className="w-full text-xs bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-slate-800 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  className="w-full text-xs bg-[#080D1B] border border-[#1F2942] rounded-xl p-2.5 text-white placeholder-slate-500 focus:outline-none focus:border-[#48DDF7]/50"
                 />
               </div>
             </div>
 
             {/* Quick concept presets */}
             <div className="pt-1">
-              <span className="text-[11px] text-slate-400 block mb-1.5 font-medium">Try Preset Academic Concepts:</span>
+              <span className="text-[11px] text-slate-500 block mb-1.5 font-mono">Try Preset Concepts:</span>
               <div className="flex flex-wrap gap-1.5">
                 {[
                   { name: "CAP Theorem", context: "Distributed Systems" },
@@ -527,7 +537,7 @@ export const StudyMode: React.FC<StudyModeProps> = ({
                       setConceptName(item.name);
                       setConceptContext(item.context);
                     }}
-                    className="text-[11px] px-2 py-1 bg-slate-100 hover:bg-violet-50 hover:text-violet-700 text-slate-600 rounded border border-slate-200 transition-colors"
+                    className="text-[11px] px-2.5 py-1 bg-[#080D1B] hover:bg-[#162238] hover:text-[#48DDF7] text-slate-300 rounded-lg border border-[#1F2942] transition-colors"
                   >
                     {item.name}
                   </button>
@@ -538,75 +548,75 @@ export const StudyMode: React.FC<StudyModeProps> = ({
             <button
               onClick={handleExplainConcept}
               disabled={isExplaining}
-              className="w-full flex items-center justify-center gap-1.5 py-2.5 px-4 text-xs font-semibold text-white bg-violet-600 hover:bg-violet-700 rounded-lg transition-colors disabled:opacity-50"
+              className="w-full flex items-center justify-center gap-1.5 py-2.5 px-4 text-xs font-bold text-[#080D1B] bg-gradient-to-r from-[#48DDF7] to-cyan-300 hover:brightness-110 rounded-xl transition-all shadow-[0_0_12px_rgba(72,221,247,0.25)] disabled:opacity-50"
             >
               <Lightbulb className="w-3.5 h-3.5" />
               <span>{isExplaining ? "Explaining Concept..." : "Explain This Concept"}</span>
             </button>
 
             {explainError && (
-              <p className="text-xs text-red-600 bg-red-50 p-2.5 rounded-lg border border-red-200">
+              <p className="text-xs text-red-300 bg-red-950/40 p-3 rounded-xl border border-red-800">
                 {explainError}
               </p>
             )}
           </div>
 
           {/* Explanation Output Area (7 cols) */}
-          <div className="lg:col-span-7 bg-white rounded-xl border border-slate-200 p-5 space-y-5 min-h-[460px]">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-200">
-              <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
+          <div className="lg:col-span-7 bg-[#10182A] rounded-2xl border border-[#1F2942] p-5 space-y-4 min-h-[460px] shadow-sm">
+            <div className="flex items-center justify-between pb-3 border-b border-[#1F2942]">
+              <h3 className="text-xs font-bold text-white uppercase tracking-wider font-mono">
                 Concept Breakdown: {explanationResult?.concept || conceptName}
               </h3>
               {explanationResult && (
                 <button
                   onClick={() => handleCopy(explanationResult.simpleExplanation, "exp")}
-                  className="p-1 text-slate-500 hover:text-slate-800 rounded hover:bg-slate-100"
+                  className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-[#080D1B]"
                   title="Copy explanation"
                 >
-                  {copiedKey === "exp" ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                  {copiedKey === "exp" ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
                 </button>
               )}
             </div>
 
             {!explanationResult ? (
-              <div className="py-24 text-center text-slate-400">
-                <Lightbulb className="w-8 h-8 mx-auto mb-2 text-slate-300" />
-                <p className="text-xs font-medium">No concept explanation generated yet.</p>
-                <p className="text-[11px] text-slate-400 mt-1 max-w-xs mx-auto">
-                  Enter a concept on the left and click "Explain This Concept".
+              <div className="py-24 text-center text-slate-500">
+                <Lightbulb className="w-10 h-10 mx-auto mb-2 text-slate-600" />
+                <p className="text-xs font-semibold text-slate-300">No concept breakdown generated yet.</p>
+                <p className="text-[11px] text-slate-500 mt-1 max-w-xs mx-auto leading-relaxed">
+                  Enter an academic theorem or term on the left and click "Explain This Concept".
                 </p>
               </div>
             ) : (
               <div className="space-y-4">
                 {/* 1. Plain language breakdown */}
-                <div className="p-4 rounded-xl bg-slate-50 border border-slate-200/80">
-                  <h4 className="text-xs font-bold text-slate-900 mb-1.5 flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-violet-600" />
+                <div className="p-4 rounded-xl bg-[#080D1B] border border-[#1F2942]">
+                  <h4 className="text-xs font-bold text-[#48DDF7] mb-1.5 flex items-center gap-1.5 font-mono">
+                    <span className="w-2 h-2 rounded-full bg-[#48DDF7]" />
                     Plain-Language Explanation
                   </h4>
-                  <p className="text-xs text-slate-700 leading-relaxed whitespace-pre-wrap">
+                  <p className="text-xs text-slate-200 leading-relaxed whitespace-pre-wrap">
                     {explanationResult.simpleExplanation}
                   </p>
                 </div>
 
                 {/* 2. Intuitive Analogy */}
-                <div className="p-4 rounded-xl bg-violet-50/70 border border-violet-200/70 text-violet-950">
-                  <h4 className="text-xs font-bold text-violet-900 mb-1.5 flex items-center gap-1.5">
-                    <Lightbulb className="w-4 h-4 text-violet-600" />
+                <div className="p-4 rounded-xl bg-[#080D1B] border border-[#B6A1FF]/40 text-[#B6A1FF]">
+                  <h4 className="text-xs font-bold text-[#B6A1FF] mb-1.5 flex items-center gap-1.5 font-mono">
+                    <Lightbulb className="w-4 h-4 text-[#B6A1FF]" />
                     Intuitive Everyday Analogy
                   </h4>
-                  <p className="text-xs text-violet-900/90 leading-relaxed">
+                  <p className="text-xs text-slate-200 leading-relaxed">
                     {explanationResult.intuitiveAnalogy}
                   </p>
                 </div>
 
                 {/* 3. Exam Takeaway Tip */}
-                <div className="p-4 rounded-xl bg-amber-50/70 border border-amber-200/70 text-amber-950">
-                  <h4 className="text-xs font-bold text-amber-900 mb-1.5 flex items-center gap-1.5">
-                    <Award className="w-4 h-4 text-amber-600" />
+                <div className="p-4 rounded-xl bg-[#080D1B] border border-amber-400/40 text-amber-300">
+                  <h4 className="text-xs font-bold text-amber-300 mb-1.5 flex items-center gap-1.5 font-mono">
+                    <Award className="w-4 h-4 text-amber-400" />
                     University Exam Takeaway
                   </h4>
-                  <p className="text-xs text-amber-900/90 leading-relaxed">
+                  <p className="text-xs text-slate-200 leading-relaxed">
                     {explanationResult.examTakeaway}
                   </p>
                 </div>
@@ -620,12 +630,12 @@ export const StudyMode: React.FC<StudyModeProps> = ({
       {activeTab === "quiz" && (
         <div className="space-y-6">
           {/* Controls Bar */}
-          <div className="bg-white rounded-xl border border-slate-200 p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="bg-[#10182A] rounded-2xl border border-[#1F2942] p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm">
             <div>
-              <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
-                Practice Quiz Generator
+              <h3 className="text-xs font-bold text-white uppercase tracking-wider font-mono">
+                Practice Quiz Challenge Generator
               </h3>
-              <p className="text-xs text-slate-500 mt-0.5">
+              <p className="text-xs text-slate-400 mt-0.5">
                 Generate dynamic multiple-choice questions with answer keys, hints, and explanations based on your study material.
               </p>
             </div>
@@ -633,33 +643,33 @@ export const StudyMode: React.FC<StudyModeProps> = ({
             <button
               onClick={handleGenerateQuiz}
               disabled={isGeneratingQuiz}
-              className="w-full sm:w-auto flex items-center justify-center gap-1.5 px-4 py-2.5 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors disabled:opacity-50 shrink-0"
+              className="w-full sm:w-auto flex items-center justify-center gap-1.5 px-4 py-2.5 text-xs font-bold text-[#080D1B] bg-gradient-to-r from-amber-400 to-amber-300 hover:brightness-110 rounded-xl transition-all shadow-[0_0_12px_rgba(245,158,11,0.25)] disabled:opacity-50 shrink-0"
             >
               <Sparkles className="w-3.5 h-3.5" />
-              <span>{isGeneratingQuiz ? "Generating Quiz..." : "Generate Practice Quiz"}</span>
+              <span>{isGeneratingQuiz ? "Synthesizing Quiz..." : "Generate Practice Quiz"}</span>
             </button>
           </div>
 
           {quizError && (
-            <p className="text-xs text-red-600 bg-red-50 p-3 rounded-lg border border-red-200">
+            <p className="text-xs text-red-300 bg-red-950/40 p-3.5 rounded-xl border border-red-800">
               {quizError}
             </p>
           )}
 
           {/* Interactive Quiz Area */}
           {quizQuestions.length === 0 ? (
-            <div className="bg-white rounded-xl border border-slate-200 p-8 sm:p-12 text-center max-w-md mx-auto">
-              <Award className="w-10 h-10 text-slate-300 mx-auto mb-3" />
-              <h4 className="text-sm font-bold text-slate-800">
-                No Active Quiz
+            <div className="bg-[#10182A] rounded-2xl border border-[#1F2942] p-8 sm:p-14 text-center max-w-md mx-auto shadow-sm">
+              <Award className="w-12 h-12 text-slate-600 mx-auto mb-3" />
+              <h4 className="text-base font-bold text-white tracking-tight">
+                No Active Practice Quiz
               </h4>
-              <p className="text-xs text-slate-500 mt-1 leading-relaxed">
-                Make sure notes are entered in the Summarize tab or click below to generate questions from sample material.
+              <p className="text-xs text-slate-400 mt-1 leading-relaxed">
+                Make sure lecture notes are entered in the Summarize tab or click below to generate questions from sample academic material.
               </p>
               <button
                 onClick={handleGenerateQuiz}
                 disabled={isGeneratingQuiz}
-                className="mt-4 w-full sm:w-auto px-4 py-2.5 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors"
+                className="mt-5 w-full sm:w-auto px-5 py-2.5 text-xs font-bold text-[#080D1B] bg-gradient-to-r from-amber-400 to-amber-300 hover:brightness-110 rounded-xl transition-all shadow-[0_0_12px_rgba(245,158,11,0.2)]"
               >
                 Generate 4 Practice Questions
               </button>
@@ -668,24 +678,24 @@ export const StudyMode: React.FC<StudyModeProps> = ({
             <div className="space-y-6">
               {/* Score strip if submitted */}
               {quizSubmitted && (
-                <div className="p-4 rounded-xl bg-white border border-slate-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                  <div className="flex items-center gap-3">
+                <div className="p-4 sm:p-5 rounded-2xl bg-[#10182A] border border-[#1F2942] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm">
+                  <div className="flex items-center gap-3.5">
                     <div
-                      className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm shrink-0 ${
+                      className={`w-12 h-12 rounded-xl flex items-center justify-center font-bold text-sm shrink-0 border ${
                         correctCount === totalQuestions
-                          ? "bg-emerald-100 text-emerald-800"
+                          ? "bg-emerald-950 text-emerald-400 border-emerald-800"
                           : correctCount >= totalQuestions / 2
-                          ? "bg-indigo-100 text-indigo-800"
-                          : "bg-amber-100 text-amber-800"
+                          ? "bg-[#080D1B] text-[#48DDF7] border-[#48DDF7]/40"
+                          : "bg-amber-950 text-amber-400 border-amber-800"
                       }`}
                     >
                       {Math.round((correctCount / totalQuestions) * 100)}%
                     </div>
                     <div>
-                      <p className="text-xs font-bold text-slate-900">
+                      <p className="text-sm font-bold text-white">
                         Quiz Completed: {correctCount} of {totalQuestions} Correct
                       </p>
-                      <p className="text-[11px] text-slate-500 mt-0.5">
+                      <p className="text-xs text-slate-400 mt-0.5">
                         {correctCount === totalQuestions
                           ? "Mastery achieved! Excellent retention of concepts."
                           : "Review the question explanations below to reinforce your knowledge."}
@@ -698,7 +708,7 @@ export const StudyMode: React.FC<StudyModeProps> = ({
                       setShowHintFor({});
                       setQuizSubmitted(false);
                     }}
-                    className="w-full sm:w-auto flex items-center justify-center gap-1 px-3 py-1.5 text-xs font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors"
+                    className="w-full sm:w-auto flex items-center justify-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-slate-200 bg-[#080D1B] hover:bg-[#162238] rounded-xl border border-[#1F2942] transition-colors"
                   >
                     <RotateCcw className="w-3.5 h-3.5" />
                     <span>Retake Quiz</span>
@@ -716,15 +726,15 @@ export const StudyMode: React.FC<StudyModeProps> = ({
                   return (
                     <div
                       key={q.id}
-                      className="bg-white rounded-xl border border-slate-200 p-5 space-y-4 shadow-2xs"
+                      className="bg-[#10182A] rounded-2xl border border-[#1F2942] p-5 space-y-4 shadow-sm"
                     >
                       {/* Question Header */}
                       <div className="flex items-start justify-between gap-3">
-                        <div className="flex items-start gap-2.5">
-                          <span className="w-6 h-6 rounded-md bg-slate-100 text-slate-700 flex items-center justify-center text-xs font-mono font-bold shrink-0">
+                        <div className="flex items-start gap-3">
+                          <span className="w-6 h-6 rounded-md bg-[#080D1B] text-[#48DDF7] border border-[#48DDF7]/30 flex items-center justify-center text-xs font-mono font-bold shrink-0">
                             {qIndex + 1}
                           </span>
-                          <h4 className="text-xs md:text-sm font-semibold text-slate-900 leading-snug">
+                          <h4 className="text-xs sm:text-sm font-semibold text-white leading-snug">
                             {q.question}
                           </h4>
                         </div>
@@ -737,7 +747,7 @@ export const StudyMode: React.FC<StudyModeProps> = ({
                                 [q.id]: !prev[q.id],
                               }))
                             }
-                            className="text-[11px] font-medium text-indigo-600 hover:text-indigo-800 shrink-0 flex items-center gap-1"
+                            className="text-[11px] font-semibold text-[#48DDF7] hover:underline shrink-0 flex items-center gap-1 font-mono"
                           >
                             <Lightbulb className="w-3 h-3" />
                             <span>{showHintFor[q.id] ? "Hide Hint" : "Hint"}</span>
@@ -747,8 +757,8 @@ export const StudyMode: React.FC<StudyModeProps> = ({
 
                       {/* Hint display */}
                       {showHintFor[q.id] && q.hint && (
-                        <div className="p-2.5 rounded-lg bg-indigo-50/70 border border-indigo-100 text-indigo-900 text-xs">
-                          <span className="font-semibold">Hint:</span> {q.hint}
+                        <div className="p-3 rounded-xl bg-[#080D1B] border border-[#48DDF7]/30 text-[#48DDF7] text-xs">
+                          <span className="font-bold">Hint:</span> {q.hint}
                         </div>
                       )}
 
@@ -758,17 +768,17 @@ export const StudyMode: React.FC<StudyModeProps> = ({
                           const isSelected = userAnswer === optIdx;
                           const isOptionCorrect = optIdx === q.correctIndex;
 
-                          let optionStyle = "border-slate-200 hover:border-indigo-300 bg-white text-slate-800";
+                          let optionStyle = "border-[#1F2942] hover:border-[#48DDF7]/40 bg-[#080D1B] text-slate-200";
                           if (hasAnswered) {
                             if (isOptionCorrect) {
-                              optionStyle = "border-emerald-500 bg-emerald-50/80 text-emerald-950 font-medium";
+                              optionStyle = "border-emerald-500 bg-emerald-950/40 text-emerald-200 font-semibold";
                             } else if (isSelected && !isOptionCorrect) {
-                              optionStyle = "border-red-400 bg-red-50 text-red-950 font-medium";
+                              optionStyle = "border-red-500 bg-red-950/40 text-red-200 font-semibold";
                             } else {
-                              optionStyle = "border-slate-200 bg-slate-50/50 text-slate-400 opacity-60";
+                              optionStyle = "border-[#1F2942]/60 bg-[#080D1B]/40 text-slate-500 opacity-60";
                             }
                           } else if (isSelected) {
-                            optionStyle = "border-indigo-600 bg-indigo-50/60 text-indigo-950 font-medium";
+                            optionStyle = "border-[#48DDF7] bg-[#48DDF7]/15 text-white font-semibold";
                           }
 
                           return (
@@ -782,20 +792,20 @@ export const StudyMode: React.FC<StudyModeProps> = ({
                                   }));
                                 }
                               }}
-                              className={`w-full p-3 rounded-lg border text-left text-xs transition-all flex items-center justify-between ${optionStyle}`}
+                              className={`w-full p-3 rounded-xl border text-left text-xs transition-all flex items-center justify-between ${optionStyle}`}
                             >
                               <div className="flex items-center gap-3">
-                                <span className="w-5 h-5 rounded-full border border-slate-300 text-slate-500 flex items-center justify-center text-[10px] font-bold">
+                                <span className="w-5 h-5 rounded-md border border-[#1F2942] bg-[#10182A] text-slate-400 flex items-center justify-center text-[10px] font-mono font-bold">
                                   {String.fromCharCode(65 + optIdx)}
                                 </span>
                                 <span>{option}</span>
                               </div>
 
                               {hasAnswered && isOptionCorrect && (
-                                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
                               )}
                               {hasAnswered && isSelected && !isOptionCorrect && (
-                                <XCircle className="w-4 h-4 text-red-500 shrink-0" />
+                                <XCircle className="w-4 h-4 text-red-400 shrink-0" />
                               )}
                             </button>
                           );
@@ -805,14 +815,14 @@ export const StudyMode: React.FC<StudyModeProps> = ({
                       {/* Explanation feedback after answering */}
                       {hasAnswered && (
                         <div
-                          className={`p-3 rounded-lg text-xs leading-relaxed border ${
+                          className={`p-3.5 rounded-xl text-xs leading-relaxed border ${
                             isCorrect
-                              ? "bg-emerald-50/60 border-emerald-200 text-emerald-900"
-                              : "bg-amber-50/60 border-amber-200 text-amber-900"
+                              ? "bg-emerald-950/30 border-emerald-800 text-emerald-200"
+                              : "bg-amber-950/30 border-amber-800 text-amber-200"
                           }`}
                         >
-                          <p className="font-bold mb-1">
-                            {isCorrect ? "Correct!" : "Explanation:"}
+                          <p className="font-bold mb-1 font-mono uppercase tracking-wider text-[11px]">
+                            {isCorrect ? "Correct!" : "Concept Explanation:"}
                           </p>
                           <p>{q.explanation}</p>
                         </div>
@@ -824,14 +834,14 @@ export const StudyMode: React.FC<StudyModeProps> = ({
 
               {/* Submit Quiz Action */}
               {!quizSubmitted && (
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 bg-white rounded-xl border border-slate-200">
-                  <span className="text-xs text-slate-600">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 sm:p-5 bg-[#10182A] rounded-2xl border border-[#1F2942]">
+                  <span className="text-xs font-mono text-slate-400">
                     Answered {answeredCount} of {totalQuestions} questions
                   </span>
                   <button
                     onClick={() => setQuizSubmitted(true)}
                     disabled={answeredCount === 0}
-                    className="w-full sm:w-auto px-4 py-2.5 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors disabled:opacity-50 text-center"
+                    className="w-full sm:w-auto px-5 py-2.5 text-xs font-bold text-[#080D1B] bg-gradient-to-r from-amber-400 to-amber-300 hover:brightness-110 rounded-xl transition-all shadow-[0_0_12px_rgba(245,158,11,0.2)] disabled:opacity-50 text-center"
                   >
                     Finish & View Score Breakdown
                   </button>

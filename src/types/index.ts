@@ -1,5 +1,12 @@
 export type AppMode = 'dashboard' | 'study' | 'document' | 'language';
 
+export interface AuthUser {
+  email: string;
+  name: string;
+  institution?: string;
+  loginAt: string;
+}
+
 export interface Citation {
   pageNumber: number;
   snippet: string;

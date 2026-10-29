@@ -58,6 +58,31 @@ export const apiClient = {
     return res.json();
   },
 
+  async uploadBatchDocuments(files: File[]): Promise<{
+    documents: DocumentMetadata[];
+    message: string;
+    totalCount: number;
+    ignoredCount?: number;
+    errors?: Array<{ filename: string; error: string }>;
+  }> {
+    const formData = new FormData();
+    files.forEach((file) => {
+      formData.append("files", file);
+    });
+
+    const res = await fetch("/api/documents/batch", {
+      method: "POST",
+      body: formData,
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || `Folder upload failed with status ${res.status}`);
+    }
+
+    return res.json();
+  },
+
   async loadSampleDocument(): Promise<DocumentMetadata> {
     const res = await fetch("/api/documents/sample", {
       method: "POST",

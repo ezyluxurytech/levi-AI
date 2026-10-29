@@ -2,16 +2,126 @@
 <html lang="en">
   <head>
     <script>
-      // Clean runtime error handling: suppress 3rd-party extension noise (MetaMask) and expected Vite dev websocket notices
+      // Clean runtime error handling: suppress 3rd-party browser extension noise (MetaMask, web3 wallets) and cloud iframe notices
       (function() {
+        // 1. Neutralize MetaMask in sandboxed preview iframe so inpage.js does not attempt connection
+        try {
+          var dummyEthereum = {
+            isMetaMask: true,
+            _metamask: { isUnlocked: function() { return Promise.resolve(false); } },
+            isConnected: function() { return false; },
+            request: function() { return Promise.reject(new Error("Preview environment")); },
+            sendAsync: function(p, cb) { if (cb) cb(new Error("Preview environment")); },
+            send: function(p, cb) { if (cb) cb(new Error("Preview environment")); },
+            on: function() {},
+            removeListener: function() {},
+            autoRefreshOnNetworkChange: false,
+          };
+          Object.defineProperty(window, 'ethereum', {
+            configurable: false,
+            enumerable: true,
+            get: function() { return dummyEthereum; },
+            set: function() {}
+          });
+        } catch(e) {}
+
+        // 2. Resilient EventTarget-based Mock WebSocket Proxy (prevents Illegal invocation)
+        try {
+          var OrigWebSocket = window.WebSocket;
+
+          class MockWebSocket extends EventTarget {
+            constructor(url, protocols) {
+              super();
+              var self = this;
+              this.url = String(url || '');
+              this.protocol = typeof protocols === 'string' ? protocols : (Array.isArray(protocols) ? protocols[0] : '');
+              this.readyState = 1; // WebSocket.OPEN
+              this.bufferedAmount = 0;
+              this.extensions = '';
+              this.binaryType = 'blob';
+              this.onopen = null;
+              this.onclose = null;
+              this.onerror = null;
+              this.onmessage = null;
+
+              setTimeout(function() {
+                if (self.readyState === 1) {
+                  var ev = typeof Event === 'function' ? new Event('open') : { type: 'open' };
+                  if (typeof self.onopen === 'function') {
+                    try { self.onopen.call(self, ev); } catch(e) {}
+                  }
+                  self.dispatchEvent(ev);
+                }
+              }, 0);
+            }
+
+            send(data) {}
+            close(code, reason) {
+              this.readyState = 3; // CLOSED
+              var ev = typeof CloseEvent === 'function'
+                ? new CloseEvent('close', { code: code || 1000, reason: reason || '', wasClean: true })
+                : (typeof Event === 'function' ? new Event('close') : { type: 'close' });
+              if (typeof this.onclose === 'function') {
+                try { this.onclose.call(this, ev); } catch(e) {}
+              }
+              this.dispatchEvent(ev);
+            }
+          }
+
+          MockWebSocket.CONNECTING = 0;
+          MockWebSocket.OPEN = 1;
+          MockWebSocket.CLOSING = 2;
+          MockWebSocket.CLOSED = 3;
+
+          function isViteUrl(url, protocols) {
+            var s = String(url || '').toLowerCase();
+            var p = String(protocols || '').toLowerCase();
+            return (
+              s.indexOf('vite') !== -1 ||
+              p.indexOf('vite') !== -1 ||
+              protocols === 'vite-hmr' ||
+              protocols === 'vite-ping' ||
+              s.indexOf('run.app') !== -1 ||
+              s.indexOf('localhost') !== -1 ||
+              s.indexOf('127.0.0.1') !== -1 ||
+              s.indexOf(':3000') !== -1
+            );
+          }
+
+          if (OrigWebSocket) {
+            window.WebSocket = new Proxy(OrigWebSocket, {
+              construct: function(target, args) {
+                var url = args[0];
+                var protocols = args[1];
+                if (isViteUrl(url, protocols)) {
+                  return new MockWebSocket(url, protocols);
+                }
+                return Reflect.construct(target, args);
+              }
+            });
+          } else {
+            window.WebSocket = MockWebSocket;
+          }
+        } catch(e) {}
+
+        // 3. Log extraction & filtering helper
         function extractText(arg) {
           if (!arg) return '';
           if (typeof arg === 'string') return arg;
+          if (typeof arg === 'symbol') return String(arg);
           if (typeof arg === 'object') {
             try {
-              var str = (arg.message || '') + ' ' + (arg.stack || '') + ' ' + (arg.name || '');
-              if (arg.cause) str += ' ' + extractText(arg.cause);
-              return str;
+              var str = '';
+              if (arg.message) str += arg.message + ' ';
+              if (arg.stack) str += arg.stack + ' ';
+              if (arg.name) str += arg.name + ' ';
+              if (arg.code) str += arg.code + ' ';
+              if (arg.reason) str += extractText(arg.reason) + ' ';
+              if (arg.cause) str += extractText(arg.cause) + ' ';
+              try {
+                str += JSON.stringify(arg) + ' ';
+              } catch (e) {}
+              return str || Object.prototype.toString.call(arg);
             } catch (e) {
               return String(arg);
             }
@@ -26,6 +136,7 @@
             s.indexOf('metamask') !== -1 ||
             s.indexOf('inpage.js') !== -1 ||
             s.indexOf('restoring session') !== -1 ||
+            s.indexOf('failed to connect to metamask') !== -1 ||
             s.indexOf('nkbihfbeogaeaoehlefnkodbefgpgknn') !== -1 ||
             s.indexOf('chrome-extension:') !== -1 ||
             s.indexOf('moz-extension:') !== -1 ||
@@ -34,11 +145,13 @@
             s.indexOf('failed to connect to websocket') !== -1 ||
             s.indexOf('websocket') !== -1 ||
             s.indexOf('illegal invocation') !== -1 ||
+            s.indexOf('[vite] connecting') !== -1 ||
             s.indexOf('[vite]') !== -1
           );
         }
 
         function checkArgs(args) {
+          if (!args) return false;
           var combined = '';
           for (var i = 0; i < args.length; i++) {
             combined += extractText(args[i]) + ' ';
@@ -46,62 +159,42 @@
           return isIgnored(combined);
         }
 
-        // Filter console methods
-        var origWarn = console.warn;
-        console.warn = function() {
-          if (checkArgs(arguments)) return;
-          origWarn.apply(console, arguments);
-        };
-
-        var origError = console.error;
-        console.error = function() {
-          if (checkArgs(arguments)) return;
-          origError.apply(console, arguments);
-        };
-
-        var origDebug = console.debug;
-        console.debug = function() {
-          if (checkArgs(arguments)) return;
-          origDebug.apply(console, arguments);
-        };
-
-        var origInfo = console.info;
-        console.info = function() {
-          if (checkArgs(arguments)) return;
-          origInfo.apply(console, arguments);
-        };
-
-        // Filter messages relayed by parent iframe loggers to AI Studio console
-        try {
-          if (window.parent && window.parent !== window) {
-            var origParentPost = window.parent.postMessage;
-            window.parent.postMessage = function(msg, targetOrigin, transfer) {
-              var serialized = '';
-              try {
-                serialized = typeof msg === 'string' ? msg : JSON.stringify(msg);
-              } catch (e) {
-                serialized = String(msg);
+        // 4. Console wrapper with intercepting setter to stop parent notification
+        var methods = ['warn', 'error', 'info', 'debug', 'log'];
+        for (var i = 0; i < methods.length; i++) {
+          (function(m) {
+            var nativeMethod = console[m] || function() {};
+            var activeHandler = function() {
+              if (checkArgs(arguments)) {
+                return;
               }
-              if (isIgnored(serialized)) return;
-              return origParentPost.apply(window.parent, arguments);
+              return nativeMethod.apply(console, arguments);
             };
-          }
-          if (window.top && window.top !== window && window.top !== window.parent) {
-            var origTopPost = window.top.postMessage;
-            window.top.postMessage = function(msg, targetOrigin, transfer) {
-              var serialized = '';
-              try {
-                serialized = typeof msg === 'string' ? msg : JSON.stringify(msg);
-              } catch (e) {
-                serialized = String(msg);
-              }
-              if (isIgnored(serialized)) return;
-              return origTopPost.apply(window.top, arguments);
-            };
-          }
-        } catch (e) {}
 
-        // Suppress unhandled promise rejections
+            try {
+              Object.defineProperty(console, m, {
+                configurable: true,
+                enumerable: true,
+                get: function() {
+                  return activeHandler;
+                },
+                set: function(newFn) {
+                  if (newFn === activeHandler) return;
+                  activeHandler = function() {
+                    if (checkArgs(arguments)) {
+                      return; // Drop before subsequent interceptor (like _aistudio-iframe.js) can forward to UI
+                    }
+                    return newFn.apply(console, arguments);
+                  };
+                }
+              });
+            } catch (e) {
+              console[m] = activeHandler;
+            }
+          })(methods[i]);
+        }
+
+        // 5. Intercept unhandled promise rejections
         window.addEventListener('unhandledrejection', function(event) {
           var text = extractText(event.reason);
           if (isIgnored(text)) {
@@ -110,7 +203,7 @@
           }
         }, true);
 
-        // Suppress window error events
+        // 6. Intercept window error events
         window.addEventListener('error', function(event) {
           var text = (event.message || '') + ' ' + (event.filename || '') + ' ' + extractText(event.error);
           if (isIgnored(text)) {
@@ -132,7 +225,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300..800;1,300..800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   </head>
-  <body class="bg-slate-50 text-slate-900 antialiased font-sans selection:bg-indigo-100 selection:text-indigo-900">
+  <body class="bg-[#080D1B] text-slate-100 antialiased font-sans selection:bg-[#48DDF7]/25 selection:text-[#48DDF7]">
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
